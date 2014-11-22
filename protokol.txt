@@ -1,0 +1,113 @@
+1. Signup
+   Client: kirim username dan password
+   Server: if username ada then 
+               pesan "Try another username"
+           else 
+               tambahkan username dan password ke daftar user
+               pesan "Signup success"
+   Format Pesan: 
+      Client: signup [username] [password]
+      Server: ["Try another username"|"Signup success"]
+      
+2. Login
+   Client: kirim username dan password
+   Server: if username dan password cocok dengan daftar user then 
+               mengubah state user di daftar user menjadi sedang online
+               pesan "Login success"
+           else 
+               pesan "Invalid username and password"
+   Format Pesan:
+      Client: login [username] [password]
+      Server: ["Login success"|"Invalid username and password"]
+      
+3. Message to user
+   Client: kirim target
+   Server: if user exist then 
+               tanyakan message
+           else
+               pesan user tidak ada
+   Client: kirim message
+   Format Pesan:
+      Client: message [user]
+      Server: ["Message: "|"[user] doesn't exist."]
+      Client: [pesan]
+      
+3. Message to group
+   Client: kirim target
+   Server: if group exist then 
+               tanyakan message
+           else
+               pesan grup tidak ada
+   Client: kirim message
+   Format Pesan:
+      Client: message [user]
+      Server: ["Message: "|"[user] doesn't exist."]
+      Client: [pesan]
+      
+4. Create group
+   Client: kirim perintah buat grup
+   Server: if group belum ada
+               buat grup di daftar group
+               pesan berhasil
+           else 
+               pesan coba nama grup lain
+   Format Pesan:
+      Client: create_group [group]
+      Server: ["Group [group] created"|"Try another group name"]
+      
+5. Join group
+   Client: kirim perintah masuk group
+   Server: if group belum ada
+               pesan gagal
+           else 
+               masukkan user ke daftar group
+               kirim pesan berhasil
+   Format Pesan:
+      Client: join_group [group]
+      Server: ["Group [group] doesn't exist"|"Joining group [group]"]
+   
+6. Leave group
+   Client: kirim perintah keluar group
+   Server: if anggota group ada
+               hapus user dari daftar group
+               Jika user group=0 hapus gruoup
+               pesan berhasil
+           else 
+               pesan user bukan anggota
+   Format Pesan:
+      Client: leave_group [group]
+      Server: ["You are not member of [group]"|"Leaving group [group]"]
+      
+7. Melihat percakapan
+   Jika terdapat pesan pada daftar pesan baru, tampilkan dengan sebelumnya menambahkan
+   ---- New Message (s) -----
+   Namun juga mengirimkan pesan walaupun pesan sudah ada di komp
+   Format pesan:
+      Client: show [user] [last message index]
+      Server to [user]: lastread [last message index]
+   
+8. Notifikasi
+   Jika terdapat pesan pada daftar pesan baru, beritahu
+   Jika sedang melakukan aksi, tunggu sampai aksi selesai.
+   
+9. Logout
+   Mengubah status di daftar user
+   
+10.Server log
+   Mencatat setiap aksi pada server
+   
+11.Diteksi klien mati
+   Jika pada waktu read mendapat string kosong atau null, ubah status di daftar user
+   
+12.Kirim file
+   Client: sendfile [lokasi file]
+   Server: terima file
+   Format Pesan:
+      Client: sendfile [user]
+      Server: ["File location: "|"[user] doesn't exist."]
+      Client: [file]
+      
+   
+   
+
+      

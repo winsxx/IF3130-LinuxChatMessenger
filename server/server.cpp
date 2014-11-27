@@ -39,9 +39,7 @@ vector<string> splitchar(char param[2000]) {
 	return retval;
 }
 
-bool signup (string username, string password) {
-	//kemungkinan: berhasil signup, gagal karena uda ada 
-
+map<string,string> getUsernamePassword() {
 	ifstream inputfile("databases/users.txt");
 	map<string,string> un_pass;
 	string line;
@@ -52,6 +50,12 @@ bool signup (string username, string password) {
 		un_pass.insert(make_pair(temp[0],temp[1]));
 	}
 	inputfile.close();
+	return un_pass;
+}
+
+bool signup (string username, string password) {
+	//kemungkinan: berhasil signup, gagal karena uda ada 
+	map<string,string> un_pass = getUsernamePassword();
 
 	map<string,string>::iterator it = un_pass.find(username);
 	if(it == un_pass.end()) { //berarti username belum ada
@@ -68,8 +72,21 @@ bool signup (string username, string password) {
 	}
 }
 
+bool login (string username, string password) {
+	//kemungkinan: berhasil login, username ga ada, password salah.
+	map<string,string> un_pass = getUsernamePassword();
+	map<string,string>::iterator it = un_pass.find(username);
+	if (it == un_pass.end()) { //berarti username belum ada
+		return false;
+	} else { //cek password
+		return (it->second == password);
+	}
+}
+
 void *connection_handler(void *);
- 
+int clientSocket;
+map<string,int> logged_in_users;
+
 int main(int argc, char *argv[]){
 	
 	/* Create socket
@@ -132,7 +149,6 @@ int main(int argc, char *argv[]){
 	 */
 	int addrlen = sizeof(struct sockaddr_in);
 	struct sockaddr_in clientAddress;
-	int clientSocket;
 	pthread_t thread_id;
 	while(true){
 		clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddress, (socklen_t*) &addrlen);
@@ -189,8 +205,19 @@ void *connection_handler(void *connectionSocket){
 				cout << "Gagal karena username sudah ada" << endl;
 			}
 		}
+	} else if (input[0] == "login") {
+		if (input.size() != 3) {
+			cout << "Error format penulisan login.\nFormat: login [username] [password]" << endl;
+		} else {
+			bool login_stat = login(input[1], input[2]);
+			if(login_stat) {
+				cout << "Login success" << endl;
+				logged_in_users.insert(make_pair(input[1],clientSocket));
+			} else {
+				cout << "Gagal login karena username belum ada / password salah" << endl;
+			}
+		}
 	}
-
 	//send the message back to client
 	write(clientSocket, client_message, strlen(client_message));
 	

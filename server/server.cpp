@@ -3,26 +3,74 @@
  * Compile: g++ server.cpp -pthread -o server
  */
  
- #define SERVER_PORT 8888
- #define MAX_CONNECTION_QUEUE 10
+#define SERVER_PORT 8888
+#define MAX_CONNECTION_QUEUE 10
  
- #include <cstdio>
- #include <cstdlib>
+#include <cstdio>
+#include <cstdlib>
  //Library socket
- #include <sys/types.h>
- #include <sys/socket.h>
- //Library address
- #include <netinet/in.h>
- //Library string for bzero
- #include <cstring>
- //Library for close() so that it no longer refers to any file
- #include <unistd.h>
- //Library threading
- #include <pthread.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+//Library address
+#include <netinet/in.h>
+//Library string for bzero
+#include <cstring>
+//Library for close() so that it no longer refers to any file
+#include <unistd.h>
+//Library threading
+#include <pthread.h>
+#include <cstring>
+#include <vector>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+using namespace std;
+
+vector<string> splitchar(char param[2000]) {
+	vector<string> retval;
+	string temp;
+	stringstream test;
+	test << param;
+	while(getline(test,temp,' ')) {
+		retval.push_back(temp);
+	}
+	return retval;
+}
+
+bool signup (string username, string password) {
+	//kemungkinan: berhasil signup, gagal karena uda ada 
+
+	ifstream inputfile("databases/users.txt");
+	map<string,string> un_pass;
+	string line;
+	while(getline(inputfile,line)) {
+		char param[1000];
+		strcpy(param,line.c_str());
+		vector<string> temp = splitchar(param);
+		un_pass.insert(make_pair(temp[0],temp[1]));
+	}
+	inputfile.close();
+
+	map<string,string>::iterator it = un_pass.find(username);
+	if(it == un_pass.end()) { //berarti username belum ada
+		ofstream outputfile;
+		outputfile.open("databases/users.txt");
+		for(it = un_pass.begin();it!=un_pass.end();++it) {
+			outputfile << it->first << " " << it->second << endl;
+		}
+		outputfile << username << " " << password << endl;
+		outputfile.close();
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void *connection_handler(void *);
  
- void *connection_handler(void *);
- 
- int main(int argc, char *argv[]){
+int main(int argc, char *argv[]){
 	
 	/* Create socket
 	 * int socket(int domain, int type, int protocol)
@@ -128,7 +176,21 @@ void *connection_handler(void *connectionSocket){
 	
 	//Logging
 	printf("Klien tulis: %s\n", client_message);
-	
+	vector<string> input = splitchar(client_message);
+
+	if(input[0] == "signup") {
+		if (input.size() != 3) {
+			cout << "Error format penulisan signup.\nFormat: signup [username] [password]" << endl;
+		} else {
+			bool signup_stat = signup(input[1], input[2]);
+			if(signup_stat) {
+				cout << "Signup success" << endl;
+			} else {
+				cout << "Gagal karena username sudah ada" << endl;
+			}
+		}
+	}
+
 	//send the message back to client
 	write(clientSocket, client_message, strlen(client_message));
 	

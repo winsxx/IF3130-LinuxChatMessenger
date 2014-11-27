@@ -17,6 +17,9 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
 using namespace std;
 
 vector<string> splitchar(char param[1000]) {
@@ -62,10 +65,6 @@ int main(int argc, char** argv){
 	
 	// connect ke server, jika error keluar
 	if (connect(sock,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) exit(1);
-	
-	
-
-
 		// baca balasan server
 		len = read(sock,buffer,1000);
 		if (len > 0){
@@ -78,11 +77,8 @@ int main(int argc, char** argv){
 		
 		char kata[1000];
 		gets(kata);
-		vector<string> input = splitchar(kata);
 		printf("Tadi tulis:%s\n",kata);
-		// for(int i = 0; i < input.size(); ++i) {
-		// 	cout << input[i] << endl;
-		// }
+
 		// tulis ke server
 		len = write(sock,kata, strlen(kata));
 	

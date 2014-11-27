@@ -14,6 +14,21 @@
 #include <cstdlib>
 #include <errno.h>
 #include <cstring>
+#include <vector>
+#include <sstream>
+#include <iostream>
+using namespace std;
+
+vector<string> splitchar(char param[1000]) {
+	vector<string> retval;
+	string temp;
+	stringstream test;
+	test << param;
+	while(getline(test,temp,' ')) {
+		retval.push_back(temp);
+	}
+	return retval;
+}
 
 int main(int argc, char** argv){
 	// penggunaan: ./client <server ip> <nilai n>
@@ -63,7 +78,11 @@ int main(int argc, char** argv){
 		
 		char kata[1000];
 		gets(kata);
+		vector<string> input = splitchar(kata);
 		printf("Tadi tulis:%s\n",kata);
+		// for(int i = 0; i < input.size(); ++i) {
+		// 	cout << input[i] << endl;
+		// }
 		// tulis ke server
 		len = write(sock,kata, strlen(kata));
 	

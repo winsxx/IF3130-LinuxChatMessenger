@@ -217,6 +217,8 @@ void *connection_handler(void *connectionSocket){
 				cout << "Gagal login karena username belum ada / password salah" << endl;
 			}
 		}
+	} else if (input[0] == "message") {
+		
 	}
 	//send the message back to client
 	write(clientSocket, client_message, strlen(client_message));

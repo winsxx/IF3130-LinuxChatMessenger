@@ -3,7 +3,7 @@ all:
 	g++ -o client_app client/client.cpp
 	
 runserver:
-	./server
+	./server_app
 	
 runclient:
-	./client
+	./client_app

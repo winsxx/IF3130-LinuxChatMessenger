@@ -29,7 +29,6 @@
 using namespace std;
 
 vector<string> splitchar(char param[2000]) {
-	cout << "masuk\n";
 	vector<string> retval;
 	string temp;
 	stringstream test;
@@ -84,8 +83,18 @@ bool login (string username, string password) {
 	}
 }
 
+bool create_group(string group_name) {
+	return true;
+}
+
+bool is_username_exits(string username) {
+	map<string,string> un_pass = getUsernamePassword();
+	map<string,string>::iterator it = un_pass.find(username);
+	return (it != un_pass.end());
+}
+
 void *connection_handler(void *);
-map<string,int> logged_in_users;
+map<int,string> logged_in_users;
 
 int main(int argc, char *argv[]){
 	
@@ -178,10 +187,9 @@ void *connection_handler(void *connectionSocket){
 	int read_size;
 	char *message, client_message[2000];
 
-	while((read_size = recv(clientSocket, client_message , 2000 , 0)) > 0 ) {
+	while((read_size = recv(clientSocket, client_message, 2000, 0)) > 0 ) {
         char* feedback;
 		vector<string> input = splitchar(client_message);
-		cout << input[0] << endl;
 		if(input[0] == "signup") {
 			if (input.size() != 3) {
 				feedback = (char*) "Error format penulisan signup.\nFormat: signup [username] [password]\n";
@@ -200,13 +208,51 @@ void *connection_handler(void *connectionSocket){
 				bool login_stat = login(input[1], input[2]);
 				if(login_stat) {
 					feedback = (char*) "Login success\n";
-					logged_in_users.insert(make_pair(input[1],clientSocket));
+					map<int,string>::iterator ite;
+					
+					ite = logged_in_users.find(clientSocket);
+					if(ite != logged_in_users.end()) logged_in_users.erase(ite);
+					
+					logged_in_users.insert(make_pair(clientSocket,input[1]));
+					cout << "User yang sedang login dan socket\n";
+					for(ite =  logged_in_users.begin(); ite!=logged_in_users.end(); ++ite) {
+						cout << ite->first << " " << ite->second << endl;
+					}
 				} else {
 					feedback = (char*) "Invalid username or password\n" ;
 				}
 			}
+		} else if (input[0] == "create") { //belum jadi
+			if (input.size() != 2) {
+				feedback = (char*) "Error format create group.\nFormat: create [group_name]\n";
+			} else {
+				bool create_group_stat = create_group(input[1]);
+			}
 		} else if (input[0] == "message") {
-			
+				map<int,string>::iterator ite;
+				ite = logged_in_users.find(clientSocket);
+				if (ite == logged_in_users.end()) { //berarti belum log in
+					feedback = (char*) "Anda belum login!\n";
+				} else {
+					cout << "Masuk yang uda log in" << endl;
+					if (input.size() != 2) {
+						feedback = (char*) "Error format message user/group.\nFormat: message [user_name/group_name]\n";
+					} else {
+						bool un_exists = is_username_exits(input[1]);
+						if(un_exists) {
+							if (ite -> second == input[1]) {
+								cout << "Kirim ke sendiri" << endl;
+								feedback = (char*) "Error tidak boleh kirim pesan ke diri sendiri\n";
+							} else {
+								cout << "Kirim ke orang lain" << endl;
+								feedback = (char*) "Message: ";
+							}
+						} else {
+							feedback = (char*) (input[1] + " doesn't exist").c_str();
+						}
+					}
+					//read_size = recv(clientSocket, client_message, 2000, 0);
+				}
 		}
         write(clientSocket, feedback, strlen(feedback));
         free(message);

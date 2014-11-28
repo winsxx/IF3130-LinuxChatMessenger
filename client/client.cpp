@@ -69,7 +69,6 @@ int main(int argc, char** argv){
 	while(1) {
         printf(">");
         gets(message);
-        cout << "Pesan yang akan dikirim: " << message << endl;
         //Kirim pesan ke server
         if(send(sock , message, strlen(message), 0) < 0) {
             puts("Send failed");
@@ -81,8 +80,10 @@ int main(int argc, char** argv){
             puts("recv failed");
             break;
         }
-        puts("Server reply :");
         puts(server_reply);
+        if (server_reply == "Message :") {
+        	cout << "Minta pesan" << endl;
+        }
     }
 	
 	close(sock);

@@ -35,6 +35,8 @@ typedef struct {
 
 vector<message_format> unread;
 
+bool is_username_exits(string username);
+
 string getDateTime() {
 	time_t t = time(0);   // get time now
     struct tm * now = localtime(& t );
@@ -51,6 +53,34 @@ void printUnread() {
 			for (int j = 0 ; j < (it1->second).size();++j) {
 				cout << "\tcontent: " << (it1->second)[j] << endl;
 			}
+		}
+	}
+}
+
+vector<string> readMessage(string from, string to) {
+	cout << "from " << from << " to " << to << endl;
+	vector<string> retval;
+	int idx = -1;
+	for(int i = 0; i < unread.size(); ++i) {
+		if (unread[i].receiver == to) {
+			idx = i;
+			break;
+		}
+	}
+	cout << idx << endl;
+	if (idx == -1) return retval; //berarti ga ada pesan yang masuk ke dia
+	else {
+		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(from);
+		if (map_it == unread[idx].sender.end()) { //berarti ga ada pesan yang dari sender ke dia
+			return retval;
+		} else {
+			retval = map_it -> second;
+			//setelah itu hapus dari database
+			unread[idx].sender.erase(map_it);
+			if (unread[idx].sender.size() == 0) {
+
+			}
+			return retval;
 		}
 	}
 }
@@ -161,6 +191,135 @@ map<string,string> getUsernamePassword() {
 	return un_pass;
 }
 
+bool iscontain (vector<string> data, string test)
+{
+	for (int i = 0 ; i < data.size(); ++i)
+    	{
+		if(data.at(i)==test)
+			return true;
+	}
+return false;
+}
+
+vector<string> getGroupName() {
+	ifstream inputfile("databases/group.txt");
+	vector<string> groupname;
+	string line;
+	while(getline(inputfile, line)) {
+		char param[1000];
+		strcpy(param,line.c_str());
+		vector<string> temp = splitchar(param);
+		 if(!iscontain(groupname, temp[0]))
+			groupname.push_back(temp[0]);
+	}
+	return groupname;
+}
+
+bool isGroupMember(string group_name, string username) {
+	ifstream inputfile("databases/group.txt");
+	string line;
+	while(getline(inputfile, line)) {
+		char param[1000];
+		strcpy(param, line.c_str());
+		vector<string> temp = splitchar(param);
+		if(group_name==temp[0] && username==temp[1])
+			return true;
+	}
+	return false;
+}
+
+bool isGroupExist(string group_name)
+{
+	ifstream inputfile("databases/group.txt");
+	string line;
+	while(getline(inputfile, line)) {
+		char param[1000];
+		strcpy(param, line.c_str());
+		vector<string> temp = splitchar(param);
+		if(group_name==temp[0])
+			return true;
+	}
+	return false;
+}
+
+bool create_group(string group_name, string nama)
+{
+
+	ifstream inputfile("databases/group.txt");
+	string line;
+	vector<string> temp;
+	while(getline(inputfile, line)) {
+		
+		temp.push_back(line);
+	}
+
+	//kemungkinan: berhasil bikin, gagal karena udah ada
+	if(isGroupExist(group_name) || is_username_exits(group_name)) //group udah ada
+		return false;
+	else //group belum ada
+	{
+		ofstream outputfile;
+		outputfile.open("databases/group.txt");
+		for (int i = 0 ; i < temp.size(); ++i)
+    		{
+			outputfile << temp.at(i) << endl;
+		}
+		outputfile << group_name << " " << nama;
+		outputfile.close();
+		return true;
+	}
+	
+}
+
+bool join_group(string group_name, string nama)
+{
+	if(!iscontain(getGroupName(), group_name) || isGroupMember(group_name,nama))
+	{
+		return false;
+	}
+	else
+	{
+		ifstream inputfile("databases/group.txt");
+		string line;
+		vector<string> temp;
+		while(getline(inputfile, line))
+			temp.push_back(line);
+		inputfile.close();
+
+		ofstream outputfile;
+		outputfile.open("databases/group.txt");
+		 for (int i = 0 ; i < temp.size(); ++i)
+  		{
+		 	outputfile << temp.at(i) << endl;
+		}
+		outputfile << group_name << " " << nama;
+		outputfile.close();
+		return true;
+	}
+}
+
+bool leave_group(string group_name, string nama)
+{
+	if(!isGroupMember(group_name, nama))
+		return false;
+	else
+	{
+		ifstream inputfile("databases/group.txt");
+		string line;
+		vector<string> ret;
+		while(getline(inputfile, line))
+		{
+			char param[1000];
+			strcpy(param,line.c_str());
+			vector<string> temp = splitchar(param);
+			if(!(temp[0]==group_name && temp[1]==nama))
+				ret.push_back(line);
+		}
+		inputfile.close();
+		return true;
+	}
+}
+
 bool signup (string username, string password) {
 	//kemungkinan: berhasil signup, gagal karena uda ada 
 	map<string,string> un_pass = getUsernamePassword();
@@ -189,16 +348,6 @@ bool login (string username, string password) {
 	} else { //cek password
 		return (it->second == password);
 	}
-}
-
-bool create_group(string group_name) {
-	return true;
-}
-
-bool is_username_exits(string username) {
-	map<string,string> un_pass = getUsernamePassword();
-	map<string,string>::iterator it = un_pass.find(username);
-	return (it != un_pass.end());
 }
 
 void *connection_handler(void *);
@@ -331,19 +480,62 @@ void *connection_handler(void *connectionSocket){
 					feedback = (char*) "Invalid username or password\n" ;
 				}
 			}
-		} else if (input[0] == "create") { //belum jadi
-			if (input.size() != 2) {
-				feedback = (char*) "Error format create group.\nFormat: create [group_name]\n";
-			} else {
-				bool create_group_stat = create_group(input[1]);
+		} else if (input[0] == "create") {
+			if(input.size() != 2)
+			{
+				feedback = (char*) "Error format penulisan login.\nFormat: create [nama group]\n";
 			}
+			else{
+				map<int,string>::iterator ite;
+				ite = logged_in_users.find(clientSocket);
+				string group_name = input[1];
+				if(create_group(group_name, ite -> second))
+				{
+
+					feedback = (char*) ("Group " + group_name + " created").c_str();
+
+
+				}	
+				else
+					feedback = (char*) ("Cannot create " + group_name).c_str();
+			}
+
+		} else if(input[0] == "join") {
+			if(input.size() != 2)
+			{
+				feedback = (char*) "Error format penulisan login.\nFormat: join [nama group]\n";
+			}
+			else
+			{
+				map<int,string>::iterator ite;
+				ite = logged_in_users.find(clientSocket);
+				if(join_group(input[1], ite -> second))
+					feedback = (char*) ("Joining group " + input[1]).c_str();
+				else
+					feedback = (char*) ("Can't join this group");
+			}
+
+		} else if(input[0] == "leave") {
+			if(input.size() != 2)
+			{
+				feedback = (char*) "Error format penulisan login.\nFormat: leave [nama group]\n";
+			}
+			else
+			{
+				map<int,string>::iterator ite;
+				ite = logged_in_users.find(clientSocket);
+				if(leave_group(input[1], ite -> second))
+					feedback = (char*) ("Leaving group " + input[1]).c_str();
+				else
+					feedback = (char*)("Failed to leave group " + input[1]).c_str();
+			}
+
 		} else if (input[0] == "message") {
 				map<int,string>::iterator ite;
 				ite = logged_in_users.find(clientSocket);
 				if (ite == logged_in_users.end()) { //berarti belum log in
 					feedback = (char*) "Anda belum login!\n";
 				} else {
-					cout << "Masuk yang uda log in" << endl;
 					if (input.size() != 2) {
 						feedback = (char*) "Error format message user/group.\nFormat: message [user_name/group_name]\n";
 					} else {
@@ -371,12 +563,45 @@ void *connection_handler(void *connectionSocket){
 					}
 					//read_size = recv(clientSocket, client_message, 2000, 0);
 				}
+		} else if (input[0] == "show") {
+			map<int,string>::iterator ite;
+			ite = logged_in_users.find(clientSocket);
+			if (ite == logged_in_users.end()) { //berarti belum log in
+				feedback = (char*) "Anda belum login!\n";
+			} else {
+				if (input.size() != 2) {
+					feedback = (char*) "Error format show conversation.\nFormat: show [user_name/group_name]\n";
+				} else {
+					bool un_exists = is_username_exits(input[1]);
+					if(un_exists) {
+						if (ite -> second == input[1]) {
+							cout << "Kirim ke sendiri" << endl;
+							feedback = (char*) "Error tidak boleh lihat pesan ke diri sendiri\n";
+						} else {
+							string sender = input[1];
+							string receiver = ite -> second;
+							printUnread();
+							vector<string> msg =  readMessage(sender,receiver); //from, to
+							string pesan = "";
+							for(int p = 0; p < msg.size(); ++p) { //vector ke string
+								pesan += (msg[p] + '\n');
+							}
+							feedback = (char*) pesan.c_str();
+							printUnread();
+						}
+					}
+				}
+			}
 		}
         write(clientSocket, feedback, strlen(feedback));
         free(message);
         memset(client_message,0,sizeof(client_message));
     }
-	
 	return 0;
-	
+}
+
+bool is_username_exits(string username) {
+	map<string,string> un_pass = getUsernamePassword();
+	map<string,string>::iterator it = un_pass.find(username);
+	return (it != un_pass.end());
 }

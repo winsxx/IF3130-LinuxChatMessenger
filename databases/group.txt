@@ -1,0 +1,8 @@
+red_dot ivana
+red_dot willy
+red_dot clairine
+white_dot ivana
+ivana clairine
+white_dot aaa
+ayam ivana
+sapi ivana

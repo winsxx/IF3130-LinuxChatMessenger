@@ -28,6 +28,106 @@
 #include <map>
 using namespace std;
 
+typedef struct {
+	string receiver;
+	map<string,vector<string> > sender;
+} message_format;
+
+vector<message_format> unread;
+
+void printUnread() {
+	for(int i = 0; i < unread.size(); ++i) {
+		cout << (i+1) << ". receiver: " << unread[i].receiver << endl;
+		for(map<string,vector<string> >::iterator it1 = unread[i].sender.begin(); it1 != unread[i].sender.end(); ++it1) {
+			cout << "\tsender_name: " << it1 -> first << endl;
+			for (int j = 0 ; j < (it1->second).size();++j) {
+				cout << "\tcontent: " << (it1->second)[j] << endl;
+			}
+		}
+	}
+}
+
+void inputMessage(string from, string to, string message) {
+	cout << "from " << from << " to " << to << " isinya " << message << endl;
+	int idx = -1;
+	for(int i = 0; i < unread.size(); ++i) {
+		if (unread[i].receiver == to) {
+			idx = i;
+			break;
+		}
+	}
+	cout << "idx " << idx << endl;
+	if (idx != -1) {
+		// map<string, vector<string> > temp_map = unread[idx].sender;
+		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(from);
+		if(map_it != unread[idx].sender.end()) { //tambahkan aja ke vector, karena receiver uda ada, sender juga ada
+			vector<string> vec_tmp = map_it -> second;
+			vec_tmp.push_back(message);
+			cout << "Isinya\n";
+			for (int x = 0; x < vec_tmp.size(); ++x) {
+				cout << vec_tmp[x] << endl;
+			}
+			map_it->second = vec_tmp;
+			for (int x = 0; x < (map_it->second).size(); ++x) {
+				cout << (map_it->second)[x] << endl;
+			}
+			// unread[idx].sender = *map_it;
+		} else { //ada receiver, tp ga ada sender, makanya perlu tambah sender
+			vector<string> vec_tmp;
+			vec_tmp.push_back(message);
+			unread[idx].sender.insert(make_pair(from,vec_tmp));
+		}
+	} else {
+		vector<string> vec_tmp;
+		vec_tmp.push_back(message);
+		
+		map<string,vector<string> > map_tmp;
+		map_tmp.insert(make_pair(from,vec_tmp));
+
+		message_format mf;
+		mf.receiver = to;
+		mf.sender = map_tmp;
+		unread.push_back(mf);
+	}
+}
+
+void loadUnreadMessageFromDatabase() {
+	ifstream inputfile("databases/unread.txt");
+	int num_of_receiver;
+	inputfile >> num_of_receiver;
+	//cout << "num of receiver: " << num_of_receiver << " " << endl;
+	for (int i = 1; i <= num_of_receiver; ++i) {
+		message_format temp;
+		inputfile >> temp.receiver;
+		//cout << "receiver : " << temp.receiver << endl;
+		int num_of_sender;
+		inputfile >> num_of_sender;
+		//cout << "\tnum of sender : " << num_of_sender << endl;
+		map<string,vector<string> > temp_map;
+
+		for (int j = 1; j <= num_of_sender; ++j) {
+			string sender_name;
+			int num_of_message;
+			inputfile >> sender_name;
+			//cout << "\t\tsender_name " << sender_name << endl;
+			inputfile >> num_of_message;
+			//cout << "\t\tnum_of_message " << num_of_message << endl;
+			vector<string> array_of_msg;
+			for (int k = 1; k <= num_of_message; ++k) {
+				string message_tmp;
+				getline(inputfile, message_tmp);
+				getline(inputfile, message_tmp);
+				//cout << "\t\t\tmessage_tmp " << message_tmp << endl;
+				array_of_msg.push_back(message_tmp);
+			}
+			temp_map.insert(make_pair(sender_name,array_of_msg));
+		}
+
+		temp.sender = temp_map;
+		unread.push_back(temp);
+	}
+}
+
 vector<string> splitchar(char param[2000]) {
 	vector<string> retval;
 	string temp;
@@ -97,7 +197,8 @@ void *connection_handler(void *);
 map<int,string> logged_in_users;
 
 int main(int argc, char *argv[]){
-	
+	loadUnreadMessageFromDatabase();
+	printUnread();
 	/* Create socket
 	 * int socket(int domain, int type, int protocol)
 	 * AF_INET : domain untuk IPv4 Internet Protocol
@@ -244,8 +345,17 @@ void *connection_handler(void *connectionSocket){
 								cout << "Kirim ke sendiri" << endl;
 								feedback = (char*) "Error tidak boleh kirim pesan ke diri sendiri\n";
 							} else {
+								string receiver = input[1];
+								string sender = ite -> second;
 								cout << "Kirim ke orang lain" << endl;
 								feedback = (char*) "Message: ";
+								write(clientSocket, feedback, strlen(feedback));
+								memset(client_message,0,sizeof(client_message));
+								read_size = recv(clientSocket, client_message, 2000, 0);
+								cout << "Pesannya: " << client_message << endl;
+								feedback = (char*) "Message sent.";
+								inputMessage(sender,receiver,client_message);
+								printUnread();
 							}
 						} else {
 							feedback = (char*) (input[1] + " doesn't exist").c_str();

@@ -35,6 +35,14 @@ typedef struct {
 
 vector<message_format> unread;
 
+string getDateTime() {
+	time_t t = time(0);   // get time now
+    struct tm * now = localtime(& t );
+    stringstream retval ;
+   	retval << "[" << (now->tm_year + 1900) << "-" << (now->tm_mon + 1) << "-" << (now->tm_mday) << " " << (now->tm_hour) << ":" << ((now->tm_min) < 10 ? "0" : "" )<< (now->tm_min) << "]";
+	return retval.str();
+}
+
 void printUnread() {
 	for(int i = 0; i < unread.size(); ++i) {
 		cout << (i+1) << ". receiver: " << unread[i].receiver << endl;
@@ -62,7 +70,7 @@ void inputMessage(string from, string to, string message) {
 		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(from);
 		if(map_it != unread[idx].sender.end()) { //tambahkan aja ke vector, karena receiver uda ada, sender juga ada
 			vector<string> vec_tmp = map_it -> second;
-			vec_tmp.push_back(message);
+			vec_tmp.push_back(getDateTime() + " " + from + " : " +  message);
 			cout << "Isinya\n";
 			for (int x = 0; x < vec_tmp.size(); ++x) {
 				cout << vec_tmp[x] << endl;
@@ -74,12 +82,12 @@ void inputMessage(string from, string to, string message) {
 			// unread[idx].sender = *map_it;
 		} else { //ada receiver, tp ga ada sender, makanya perlu tambah sender
 			vector<string> vec_tmp;
-			vec_tmp.push_back(message);
+			vec_tmp.push_back(getDateTime() + " " + from + " : " +  message);
 			unread[idx].sender.insert(make_pair(from,vec_tmp));
 		}
 	} else {
 		vector<string> vec_tmp;
-		vec_tmp.push_back(message);
+		vec_tmp.push_back(getDateTime() + " " + from + " : " +  message);
 		
 		map<string,vector<string> > map_tmp;
 		map_tmp.insert(make_pair(from,vec_tmp));

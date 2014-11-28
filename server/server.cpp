@@ -29,6 +29,7 @@
 using namespace std;
 
 vector<string> splitchar(char param[2000]) {
+	cout << "masuk\n";
 	vector<string> retval;
 	string temp;
 	stringstream test;
@@ -84,7 +85,6 @@ bool login (string username, string password) {
 }
 
 void *connection_handler(void *);
-int clientSocket;
 map<string,int> logged_in_users;
 
 int main(int argc, char *argv[]){
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]){
 	struct sockaddr_in clientAddress;
 	pthread_t thread_id;
 	while(true){
-		clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddress, (socklen_t*) &addrlen);
+		int clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddress, (socklen_t*) &addrlen);
 		if(clientSocket != -1){
 			printf("Connection accepted with client socket %d\n",clientSocket);
 			
@@ -177,54 +177,41 @@ void *connection_handler(void *connectionSocket){
 	 */
 	int read_size;
 	char *message, client_message[2000];
-	
-	//Send message to client
-	message = (char*)"Selamat datang ke Messenger\n";
-	write(clientSocket, message, strlen(message));
-	
-	message = (char*)"Tulis sesuatu dan saya akan mengulanginya\n";
-	write(clientSocket, message, strlen(message));
-	
-	//Recieve message from client
-	read_size = recv(clientSocket, client_message, 2000, 0);
-	//end of string marker
-	client_message[read_size] = '\0';
-	
-	//Logging
-	printf("Klien tulis: %s\n", client_message);
-	vector<string> input = splitchar(client_message);
 
-	if(input[0] == "signup") {
-		if (input.size() != 3) {
-			cout << "Error format penulisan signup.\nFormat: signup [username] [password]" << endl;
-		} else {
-			bool signup_stat = signup(input[1], input[2]);
-			if(signup_stat) {
-				cout << "Signup success" << endl;
+	while((read_size = recv(clientSocket, client_message , 2000 , 0)) > 0 ) {
+        char* feedback;
+		vector<string> input = splitchar(client_message);
+		cout << input[0] << endl;
+		if(input[0] == "signup") {
+			if (input.size() != 3) {
+				feedback = (char*) "Error format penulisan signup.\nFormat: signup [username] [password]\n";
 			} else {
-				cout << "Gagal karena username sudah ada" << endl;
+				bool signup_stat = signup(input[1], input[2]);
+				if(signup_stat) {
+					feedback = (char*) "Signup success!\n";
+				} else {
+					feedback = (char*) "Signup gagal karena username sudah ada\n";
+				}
 			}
-		}
-	} else if (input[0] == "login") {
-		if (input.size() != 3) {
-			cout << "Error format penulisan login.\nFormat: login [username] [password]" << endl;
-		} else {
-			bool login_stat = login(input[1], input[2]);
-			if(login_stat) {
-				cout << "Login success" << endl;
-				logged_in_users.insert(make_pair(input[1],clientSocket));
+		} else if (input[0] == "login") {
+			if (input.size() != 3) {
+				feedback = (char*) "Error format penulisan login.\nFormat: login [username] [password]\n";
 			} else {
-				cout << "Gagal login karena username belum ada / password salah" << endl;
+				bool login_stat = login(input[1], input[2]);
+				if(login_stat) {
+					feedback = (char*) "Login success\n";
+					logged_in_users.insert(make_pair(input[1],clientSocket));
+				} else {
+					feedback = (char*) "Invalid username or password\n" ;
+				}
 			}
+		} else if (input[0] == "message") {
+			
 		}
-	} else if (input[0] == "message") {
-		
-	}
-	//send the message back to client
-	write(clientSocket, client_message, strlen(client_message));
-	
-	//hapus pesan dari buffer
-	memset(client_message, 0, 2000);
+        write(clientSocket, feedback, strlen(feedback));
+        free(message);
+        memset(client_message,0,sizeof(client_message));
+    }
 	
 	return 0;
 	

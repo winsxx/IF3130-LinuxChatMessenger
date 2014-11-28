@@ -65,22 +65,25 @@ int main(int argc, char** argv){
 	
 	// connect ke server, jika error keluar
 	if (connect(sock,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) exit(1);
-		// baca balasan server
-		len = read(sock,buffer,1000);
-		if (len > 0){
-			printf("%s", buffer);
-		}
-		
-		fflush(stdin);
-
-		printf("\n =========================\nTulis kasih server:");
-		
-		char kata[1000];
-		gets(kata);
-		printf("Tadi tulis:%s\n",kata);
-
-		// tulis ke server
-		len = write(sock,kata, strlen(kata));
+	char message[1000] , server_reply[2000];
+	while(1) {
+        printf(">");
+        gets(message);
+        cout << "Pesan yang akan dikirim: " << message << endl;
+        //Kirim pesan ke server
+        if(send(sock , message, strlen(message), 0) < 0) {
+            puts("Send failed");
+            return 1;
+        }
+		memset(server_reply,0,sizeof(server_reply));
+        //Receive a reply from the server
+        if(recv(sock, server_reply, 2000, 0) < 0) {
+            puts("recv failed");
+            break;
+        }
+        puts("Server reply :");
+        puts(server_reply);
+    }
 	
 	close(sock);
 	

@@ -37,6 +37,33 @@ vector<message_format> unread;
 
 bool is_username_exits(string username);
 
+void saveUnreadMessageToDatabase(){
+	ofstream outputfile;
+	outputfile.open("databases/read.txt");
+	int num_of_receiver = unread.size();
+	outputfile << num_of_receiver << endl;
+	for (int i = 1; i <= num_of_receiver; ++i) {
+		message_format temp = unread[i-1];
+		outputfile << temp.receiver << endl;
+		int num_of_sender = temp.sender.size();
+		outputfile << num_of_sender<<endl;
+
+		for (map<string,vector<string> >::iterator it1 = temp.sender.begin(); it1 != temp.sender.end(); ++it1) {
+			string sender_name = it1 -> first;
+			int num_of_message = (it1 -> second).size();
+			outputfile << sender_name << endl;
+			outputfile << num_of_message << endl;
+			vector<string> array_of_msg;
+			for (int k = 1; k <= num_of_message; ++k) {
+				string message_tmp = (it1 -> second)[k-1];
+				outputfile << message_tmp << endl;
+			}
+		}
+	}
+	outputfile.close();
+}
+
+
 string getDateTime() {
 	time_t t = time(0);   // get time now
     struct tm * now = localtime(& t );
@@ -356,6 +383,7 @@ map<int,string> logged_in_users;
 int main(int argc, char *argv[]){
 	loadUnreadMessageFromDatabase();
 	printUnread();
+	saveUnreadMessageToDatabase();
 	/* Create socket
 	 * int socket(int domain, int type, int protocol)
 	 * AF_INET : domain untuk IPv4 Internet Protocol
@@ -553,6 +581,7 @@ void *connection_handler(void *connectionSocket){
 								memset(client_message,0,sizeof(client_message));
 								read_size = recv(clientSocket, client_message, 2000, 0);
 								cout << "Pesannya: " << client_message << endl;
+								feedback = NULL;
 								feedback = (char*) "Message sent.";
 								inputMessage(sender,receiver,client_message);
 								printUnread();

@@ -119,6 +119,15 @@ int main(int argc, char** argv){
             	puts("Send failed");
 	            return 1;
 	        } else {
+				memset(server_reply,0,sizeof(server_reply));
+				//Receive a reply from the server
+				if(recv(sock, server_reply, 2000, 0) < 0) {
+					puts("recv failed");
+					break;
+				} else{
+					//Balasan dari server
+					puts(server_reply);
+				}
 				string_token = splitchar(message);
 				addMessage(string_token[1], "me", time(0), message2);
 				// saveMessage();
@@ -255,3 +264,29 @@ string getTimeString(time_t waktu){
 	
 	return string(temp);
 }
+
+int recvStringFrom(int socketId, char* server_reply){
+	String msg="";
+	int code;
+	int cum = 0;
+	char from_server[2];
+	
+	//Baca dari server per byte sampai ketemu null character
+	while(code = recv(socketId, from_server, 1, 0) > 0){
+		if(from_server[0] == '\0'){
+			break;
+		}else{
+			msg += from_server[0];
+			++cum;
+		}
+	}
+	
+	//Masukkan sebuah string message dari server atau string setengah jadi
+	server_reply = msg.c_str();
+	
+	if(code<=0) //kode error atau client tutup
+		return code;
+	else 
+		return cum; //banyaknya karakter
+}
+

@@ -20,8 +20,28 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include <ctime>
 using namespace std;
 
+
+typedef struct{
+	time_t waktu;
+	string dari;
+	string isi;
+}aMessage;
+
+map<string, vector< aMessage > > message_list;
+
+//Daftar fungsi
+void saveMessage();
+void loadMessage();
+void showMessage(string user);
+void addMessage(string user, string from, time_t waktu, string isi);
+
+/*
+ * Masukan berupa sebuah baris string yang katanya dipisahkan spasi
+ * Keluaran berupa vector yang tiap elemennya berisi kata
+ */
 vector<string> splitchar(char param[1000]) {
 	vector<string> retval;
 	string temp;
@@ -34,11 +54,6 @@ vector<string> splitchar(char param[1000]) {
 }
 
 int main(int argc, char** argv){
-	// penggunaan: ./client <server ip> <nilai n>
-	if (argc != 3){
-		printf("Pemakaian: ./client <server ip> <nilai n>\n");
-	}
-	
 	int sock, port, len; char buffer[1000];
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
@@ -65,7 +80,8 @@ int main(int argc, char** argv){
 	
 	// connect ke server, jika error keluar
 	if (connect(sock,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) exit(1);
-	char message[1000] , server_reply[2000];
+	char message[1000] , server_reply[2000], message2[1000];
+	vector<string> string_token;
 	while(1) {
         printf(">");
         gets(message);
@@ -80,17 +96,126 @@ int main(int argc, char** argv){
             puts("recv failed");
             break;
         }
+        
+        //Tampilkan pesan dengan user
+        string_token = splitchar(message);
+        if(string_token[0].compare("show") == 0 && string_token.size()>1){
+			showMessage(string_token[1]);
+		}
+        
         puts(server_reply);
-        if (server_reply == "Message :") {
-        	gets(message);
-        	if(send(sock , message, strlen(message), 0) < 0) {
+        if (strcmp(server_reply,"Message: ")==0) {
+        	gets(message2);
+        	if(send(sock , message2, strlen(message2), 0) < 0) {
             	puts("Send failed");
 	            return 1;
-	        }
+	        } else {
+				string_token = splitchar(message);
+				addMessage(string_token[1], "me", time(0), message2);
+				saveMessage();
+			}
         }
     }
 	
 	close(sock);
 	
 	return 0;
+}
+
+
+//Menyimpan message ke database
+void saveMessage(){
+	ofstream message_file;
+	message_file.open("data.txt");
+	//Tulis jumlah user
+	message_file << message_list.size() <<endl;
+	
+	//Ulang sebanyak jumlah user
+	for(map<string, vector<aMessage> >::iterator it = message_list.begin();it != message_list.end(); it++){
+		//Tulis nama user
+		message_file << it->first << endl;
+		vector<aMessage> message_from = it->second;
+		//Tulis jumlah message dengan user
+		message_file << message_from.size() <<endl;
+		//Tulis semua message dengan user
+		for(int j=0; j<message_from.size(); j++){
+			aMessage temp = message_from[j];
+			message_file << temp.waktu << endl;
+			message_file << temp.dari << endl;
+			message_file << temp.isi << endl;
+		}
+	}
+	message_file.close();
+}
+
+
+//Mengambil data message dari database
+void loadMessage(){
+	ifstream message_file;
+	message_list.clear();
+	message_file.open("data.txt");
+	
+	string line;
+	
+	//Baca jumlah user
+	getline(message_file, line);
+	int user_size;
+	sscanf(line.c_str(), "%d", &user_size);
+	
+	//Ulang sebanyak jumlah user
+	for(int i=0; i<user_size; i++){
+		//Baca nama "user_name"
+		string user_name;
+		getline(message_file, user_name);
+		
+		//Baca jumlah message dengan "user_name"
+		int numMessage;
+		getline(message_file, line);
+		sscanf(line.c_str(), "%d", &numMessage);
+		
+		//Baca semua message dengan "user_name"
+		vector<aMessage> temp_messages;
+		for(int j=0; j<numMessage; j++){
+			aMessage temp;
+			int intTime;
+			//waktu
+			getline(message_file, line);
+			sscanf(line.c_str(), "%d", &intTime);
+			temp.waktu = (time_t) intTime;
+			//User
+			getline(message_file, temp.dari);
+			//Isi
+			getline(message_file, temp.isi);
+			
+			temp_messages.push_back(temp);
+		}
+		message_list[user_name] = temp_messages;
+	}
+	message_file.close();
+}
+
+//Menampilkan message percakapan dengan 'user'
+void showMessage(string user){
+	map<string, vector<aMessage> >::iterator it = message_list.find(user);
+	if(it == message_list.end()){
+		cout<< "User message not exist" <<endl;
+	} else {
+		vector<aMessage> message_content;
+		message_content = it->second;
+		for(int i=0; i< message_content.size(); i++){
+			struct tm * timeinfo;
+			timeinfo = localtime ( &message_content[i].waktu);
+			printf("%s : %s", message_content[i].dari.c_str(), message_content[i].isi.c_str());
+		}
+	}
+}
+
+//Tambah pesan dari user
+void addMessage(string user, string from, time_t waktu, string isi){
+	aMessage temp;
+	temp.waktu = time(0);
+	temp.dari = from;
+	temp.isi = isi;
+	
+	message_list[user].push_back(temp);
 }

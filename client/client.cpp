@@ -280,3 +280,4 @@ int recvStringFrom(int socketId, char* server_reply){
 	else 
 		return cum; //banyaknya karakter
 }
+

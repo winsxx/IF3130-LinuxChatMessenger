@@ -37,6 +37,7 @@ void saveMessage();
 void loadMessage();
 void showMessage(string user);
 void addMessage(string user, string from, time_t waktu, string isi);
+string getTimeString(time_t waktu);
 
 /*
  * Masukan berupa sebuah baris string yang katanya dipisahkan spasi
@@ -100,16 +101,33 @@ int main(int argc, char** argv){
         //Tampilkan pesan dengan user
         string_token = splitchar(message);
         if(string_token[0].compare("show") == 0 && string_token.size()>1){
+			loadMessage();
 			showMessage(string_token[1]);
 		}
         
+        //Jika logout, keluar dari loop dan close sock, recv server akan menerima return 0
+        if(string_token[0].compare("logout") == 0){
+			break;
+		}
+		
+		//Balasan dari server
         puts(server_reply);
+        
         if (strcmp(server_reply,"Message: ")==0) {
         	gets(message2);
         	if(send(sock , message2, strlen(message2), 0) < 0) {
             	puts("Send failed");
 	            return 1;
 	        } else {
+				memset(server_reply,0,sizeof(server_reply));
+				//Receive a reply from the server
+				if(recv(sock, server_reply, 2000, 0) < 0) {
+					puts("recv failed");
+					break;
+				} else{
+					//Balasan dari server
+					puts(server_reply);
+				}
 				string_token = splitchar(message);
 				addMessage(string_token[1], "me", time(0), message2);
 				saveMessage();
@@ -203,9 +221,8 @@ void showMessage(string user){
 		vector<aMessage> message_content;
 		message_content = it->second;
 		for(int i=0; i< message_content.size(); i++){
-			struct tm * timeinfo;
-			timeinfo = localtime ( &message_content[i].waktu);
-			printf("%s : %s", message_content[i].dari.c_str(), message_content[i].isi.c_str());
+			printf("[%s] %s : %s", getTimeString(message_content[i].waktu).c_str(), 
+				message_content[i].dari.c_str(), message_content[i].isi.c_str());
 		}
 	}
 }
@@ -218,4 +235,48 @@ void addMessage(string user, string from, time_t waktu, string isi){
 	temp.isi = isi;
 	
 	message_list[user].push_back(temp);
+}
+
+//Dapatkan tanggal dan waktu dalam format yg sesuai
+string getTimeString(time_t waktu){
+	struct tm * timeinfo;
+	timeinfo = localtime ( &waktu);
+	
+	int tahun = 1900+timeinfo->tm_year;
+	int bulan = 1+timeinfo->tm_mon;
+	int tanggal = 1+timeinfo->tm_mday;
+	
+	int jam = 1+timeinfo->tm_hour;
+	int menit = 1+timeinfo->tm_min;
+	int detik = 1+timeinfo->tm_sec;
+	
+	char temp[30];
+	sprintf(temp,"%d-%d-%d %d:%d",tahun,bulan,tanggal,jam,menit);
+	
+	return string(temp);
+}
+
+int recvStringFrom(int socketId, char* server_reply){
+	String msg="";
+	int code;
+	int cum = 0;
+	char from_server[2];
+	
+	//Baca dari server per byte sampai ketemu null character
+	while(code = recv(socketId, from_server, 1, 0) > 0){
+		if(from_server[0] == '\0'){
+			break;
+		}else{
+			msg += from_server[0];
+			++cum;
+		}
+	}
+	
+	//Masukkan sebuah string message dari server atau string setengah jadi
+	server_reply = msg.c_str();
+	
+	if(code<=0) //kode error atau client tutup
+		return code;
+	else 
+		return cum; //banyaknya karakter
 }

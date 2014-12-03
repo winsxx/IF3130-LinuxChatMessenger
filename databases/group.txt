@@ -8,3 +8,5 @@ ayam ivana
 sapi ivana
 googoo kayu
 red_dot kayu
+itb kayu
+itb winson

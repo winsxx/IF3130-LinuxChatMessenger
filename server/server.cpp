@@ -240,6 +240,9 @@ bool iscontain (vector<string> data, string test){
 }
 
 vector<string> getGroupName() {
+	//Lock 
+	pthread_mutex_lock(&mutex_group_data);
+	
 	ifstream inputfile("databases/group.txt");
 	vector<string> groupname;
 	string line;
@@ -250,51 +253,85 @@ vector<string> getGroupName() {
 		 if(!iscontain(groupname, temp[0]))
 			groupname.push_back(temp[0]);
 	}
+	inputfile.close();
+	
+	//Unlock 
+	pthread_mutex_unlock(&mutex_group_data);
+	
 	return groupname;
 }
 
 bool isGroupMember(string group_name, string username) {
+	//Lock 
+	pthread_mutex_lock(&mutex_group_data);
+	
 	ifstream inputfile("databases/group.txt");
 	string line;
 	while(getline(inputfile, line)) {
 		char param[1000];
 		strcpy(param, line.c_str());
 		vector<string> temp = splitchar(param);
-		if(group_name==temp[0] && username==temp[1])
+		if(group_name==temp[0] && username==temp[1]){
+			//Unlock 
+			inputfile.close();
+			pthread_mutex_unlock(&mutex_group_data);
 			return true;
+		}
 	}
+	
+	//Unlock 
+	inputfile.close();
+	pthread_mutex_unlock(&mutex_group_data);
+	
 	return false;
 }
 
 bool isGroupExist(string group_name)
 {
+	//Lock 
+	pthread_mutex_lock(&mutex_group_data);
+	
 	ifstream inputfile("databases/group.txt");
 	string line;
 	while(getline(inputfile, line)) {
 		char param[1000];
 		strcpy(param, line.c_str());
 		vector<string> temp = splitchar(param);
-		if(group_name==temp[0])
+		if(group_name==temp[0]){
+			//Unlock 
+			inputfile.close();
+			pthread_mutex_unlock(&mutex_group_data);
 			return true;
+		}
 	}
+	//Unlock 
+	inputfile.close();
+	pthread_mutex_unlock(&mutex_group_data);
 	return false;
 }
 
 bool create_group(string group_name, string nama)
 {
-	ifstream inputfile("databases/group.txt");
-	string line;
-	vector<string> temp;
-	while(getline(inputfile, line)) {
-		
-		temp.push_back(line);
-	}
+	/*
+	 * Yang ini gw masih bingung karena masih mungkin terjadi race condition
+	 */
+
 
 	//kemungkinan: berhasil bikin, gagal karena udah ada
 	if(isGroupExist(group_name) || is_username_exits(group_name)) //group udah ada
 		return false;
 	else //group belum ada
 	{
+		//Lock 
+		pthread_mutex_lock(&mutex_group_data);
+		//Input file
+		ifstream inputfile("databases/group.txt");
+		string line;
+		vector<string> temp;
+		while(getline(inputfile, line)) {
+			temp.push_back(line);
+		}
+		//Output file
 		ofstream outputfile;
 		outputfile.open("databases/group.txt");
 		for (int i = 0 ; i < temp.size(); ++i)
@@ -303,6 +340,9 @@ bool create_group(string group_name, string nama)
 		}
 		outputfile << group_name << " " << nama;
 		outputfile.close();
+		
+		//Unock 
+		pthread_mutex_unlock(&mutex_group_data);
 		return true;
 	}
 	
@@ -316,6 +356,9 @@ bool join_group(string group_name, string nama)
 	}
 	else
 	{
+		//Lock 
+		pthread_mutex_lock(&mutex_group_data);
+		
 		ifstream inputfile("databases/group.txt");
 		string line;
 		vector<string> temp;
@@ -331,6 +374,8 @@ bool join_group(string group_name, string nama)
 		}
 		outputfile << group_name << " " << nama;
 		outputfile.close();
+		//Unock 
+		pthread_mutex_unlock(&mutex_group_data);
 		return true;
 	}
 }
@@ -341,6 +386,9 @@ bool leave_group(string group_name, string nama)
 		return false;
 	else
 	{
+		//Lock 
+		pthread_mutex_lock(&mutex_group_data);
+		
 		ifstream inputfile("databases/group.txt");
 		string line;
 		vector<string> ret;
@@ -353,6 +401,9 @@ bool leave_group(string group_name, string nama)
 				ret.push_back(line);
 		}
 		inputfile.close();
+		
+		//Unlock 
+		pthread_mutex_unlock(&mutex_group_data);
 		return true;
 	}
 }
@@ -409,8 +460,6 @@ int recvStringFrom(int socketId, char* server_reply){
 			++cum;
 		}
 	}
-	
-	printf("Hasil pembacaan recvString From %s\n",msg.c_str());
 	
 	//Masukkan sebuah string message dari server atau string setengah jadi
 	server_reply = strcpy(server_reply,msg.c_str());
@@ -526,6 +575,7 @@ void *connection_handler(void *connectionSocket){
 	while((read_size = recvStringFrom(clientSocket, client_message)) > 0 ) {
         char* feedback;
 		vector<string> input = splitchar(client_message);
+
 		if(input[0] == "signup") {
 			if (input.size() != 3) {
 				feedback = (char*) "Error format penulisan signup.\nFormat: signup [username] [password]\n";
@@ -543,7 +593,7 @@ void *connection_handler(void *connectionSocket){
 			} else {
 				bool login_stat = login(input[1], input[2]);
 				if(login_stat) {
-					feedback = (char*) "Login success\n\0";
+					feedback = (char*) "Login success\n";
 					map<int,string>::iterator ite;
 					
 					ite = logged_in_users.find(clientSocket);
@@ -676,6 +726,11 @@ void *connection_handler(void *connectionSocket){
         free(message);
         memset(client_message,0,sizeof(client_message));
     }
+    if(read_size == 0){
+		map<int,string>::iterator ite;
+		ite = logged_in_users.find(clientSocket);
+		if(ite != logged_in_users.end()) logged_in_users.erase(ite);
+	}
 	return 0;
 }
 

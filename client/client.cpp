@@ -23,20 +23,13 @@
 #include <ctime>
 using namespace std;
 
-
-typedef struct{
-	time_t waktu;
-	string dari;
-	string isi;
-}aMessage;
-
-map<string, vector< aMessage > > message_list;
+map<string, string > message_list;
 
 //Daftar fungsi
 void saveMessage();
 void loadMessage();
 void showMessage(string user);
-void addMessage(string user, string from, time_t waktu, string isi);
+void addMessage(string user, string isi);
 int recvStringFrom(int socketId, char* server_reply);
 string getTimeString(time_t waktu);
 
@@ -132,8 +125,6 @@ int main(int argc, char** argv){
 					puts(server_reply);
 				}
 				string_token = splitchar(message);
-				addMessage(string_token[1], "me", time(0), message2);
-				// saveMessage();
 				memset(server_reply,0,sizeof(server_reply));
 				if(recv(sock, server_reply, 2000, 0) < 0) {
             		puts("recv failed");
@@ -161,19 +152,11 @@ void saveMessage(){
 	message_file << message_list.size() <<endl;
 	
 	//Ulang sebanyak jumlah user
-	for(map<string, vector<aMessage> >::iterator it = message_list.begin();it != message_list.end(); it++){
+	for(map<string, string>::iterator it = message_list.begin();it != message_list.end(); it++){
 		//Tulis nama user
 		message_file << it->first << endl;
-		vector<aMessage> message_from = it->second;
-		//Tulis jumlah message dengan user
-		message_file << message_from.size() <<endl;
 		//Tulis semua message dengan user
-		for(int j=0; j<message_from.size(); j++){
-			aMessage temp = message_from[j];
-			message_file << temp.waktu << endl;
-			message_file << temp.dari << endl;
-			message_file << temp.isi << endl;
-		}
+		message_file << it->second << endl;
 	}
 	message_file.close();
 }
@@ -198,74 +181,30 @@ void loadMessage(){
 		string user_name;
 		getline(message_file, user_name);
 		
-		//Baca jumlah message dengan "user_name"
-		int numMessage;
-		getline(message_file, line);
-		sscanf(line.c_str(), "%d", &numMessage);
+		//Baca message "user_name"
+		string content;
+		getline(message_file, content);
 		
-		//Baca semua message dengan "user_name"
-		vector<aMessage> temp_messages;
-		for(int j=0; j<numMessage; j++){
-			aMessage temp;
-			int intTime;
-			//waktu
-			getline(message_file, line);
-			sscanf(line.c_str(), "%d", &intTime);
-			temp.waktu = (time_t) intTime;
-			//User
-			getline(message_file, temp.dari);
-			//Isi
-			getline(message_file, temp.isi);
-			
-			temp_messages.push_back(temp);
-		}
-		message_list[user_name] = temp_messages;
+		message_list[user_name] = content;
 	}
 	message_file.close();
 }
 
 //Menampilkan message percakapan dengan 'user'
 void showMessage(string user){
-	map<string, vector<aMessage> >::iterator it = message_list.find(user);
+	map<string, string >::iterator it = message_list.find(user);
 	if(it == message_list.end()){
 		cout<< "User message not exist" <<endl;
 	} else {
-		vector<aMessage> message_content;
+		string message_content;
 		message_content = it->second;
-		for(int i=0; i< message_content.size(); i++){
-			printf("[%s] %s : %s", getTimeString(message_content[i].waktu).c_str(), 
-				message_content[i].dari.c_str(), message_content[i].isi.c_str());
-		}
+		cout << message_content;
 	}
 }
 
 //Tambah pesan dari user
-void addMessage(string user, string from, time_t waktu, string isi){
-	aMessage temp;
-	temp.waktu = time(0);
-	temp.dari = from;
-	temp.isi = isi;
-	
-	message_list[user].push_back(temp);
-}
-
-//Dapatkan tanggal dan waktu dalam format yg sesuai
-string getTimeString(time_t waktu){
-	struct tm * timeinfo;
-	timeinfo = localtime ( &waktu);
-	
-	int tahun = 1900+timeinfo->tm_year;
-	int bulan = 1+timeinfo->tm_mon;
-	int tanggal = 1+timeinfo->tm_mday;
-	
-	int jam = 1+timeinfo->tm_hour;
-	int menit = 1+timeinfo->tm_min;
-	int detik = 1+timeinfo->tm_sec;
-	
-	char temp[30];
-	sprintf(temp,"%d-%d-%d %d:%d",tahun,bulan,tanggal,jam,menit);
-	
-	return string(temp);
+void addMessage(string user, string isi){
+	message_list[user] += isi;
 }
 
 int recvStringFrom(int socketId, char* server_reply){

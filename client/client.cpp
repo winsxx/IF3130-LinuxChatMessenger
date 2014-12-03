@@ -133,7 +133,16 @@ int main(int argc, char** argv){
 				}
 				string_token = splitchar(message);
 				addMessage(string_token[1], "me", time(0), message2);
-				saveMessage();
+				// saveMessage();
+				memset(server_reply,0,sizeof(server_reply));
+				if(recv(sock, server_reply, 2000, 0) < 0) {
+            		puts("recv failed");
+            		break;
+        		}
+        		puts(server_reply);
+        		puts("ok");
+        		puts(server_reply);
+        		puts("ok1");
 			}
         }
     }

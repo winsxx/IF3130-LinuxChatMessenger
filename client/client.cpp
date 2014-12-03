@@ -37,6 +37,7 @@ void saveMessage();
 void loadMessage();
 void showMessage(string user);
 void addMessage(string user, string from, time_t waktu, string isi);
+int recvStringFrom(int socketId, char* server_reply);
 string getTimeString(time_t waktu);
 
 /*
@@ -87,13 +88,14 @@ int main(int argc, char** argv){
         printf(">");
         gets(message);
         //Kirim pesan ke server
-        if(send(sock , message, strlen(message), 0) < 0) {
+        message[strlen(message)] ='\0';
+        if(send(sock , message, strlen(message)+1, 0) < 0) {
             puts("Send failed");
             return 1;
         }
 		memset(server_reply,0,sizeof(server_reply));
         //Receive a reply from the server
-        if(recv(sock, server_reply, 2000, 0) < 0) {
+        if(recvStringFrom(sock, server_reply) < 0) {
             puts("recv failed");
             break;
         }
@@ -115,13 +117,14 @@ int main(int argc, char** argv){
         
         if (strcmp(server_reply,"Message: ")==0) {
         	gets(message2);
-        	if(send(sock , message2, strlen(message2), 0) < 0) {
+        	message2[strlen(message2)] ='\0';
+        	if(send(sock , message2, strlen(message2)+1, 0) < 0) {
             	puts("Send failed");
 	            return 1;
 	        } else {
 				memset(server_reply,0,sizeof(server_reply));
 				//Receive a reply from the server
-				if(recv(sock, server_reply, 2000, 0) < 0) {
+				if(recvStringFrom(sock, server_reply) < 0) {
 					puts("recv failed");
 					break;
 				} else{
@@ -257,7 +260,7 @@ string getTimeString(time_t waktu){
 }
 
 int recvStringFrom(int socketId, char* server_reply){
-	String msg="";
+	string msg="";
 	int code;
 	int cum = 0;
 	char from_server[2];
@@ -273,7 +276,7 @@ int recvStringFrom(int socketId, char* server_reply){
 	}
 	
 	//Masukkan sebuah string message dari server atau string setengah jadi
-	server_reply = msg.c_str();
+	server_reply = strcpy(server_reply,msg.c_str());
 	
 	if(code<=0) //kode error atau client tutup
 		return code;

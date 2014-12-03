@@ -28,6 +28,12 @@
 #include <map>
 using namespace std;
 
+/*
+ * Daftar mutex
+ */
+pthread_mutex_t mutex_user_data;
+pthread_mutex_t mutex_group_data;
+
 typedef struct {
 	string receiver;
 	map<string,vector<string> > sender;
@@ -178,6 +184,9 @@ vector<string> splitchar(char param[2000]) {
 }
 
 map<string,string> getUsernamePassword() {
+	//Lock
+	pthread_mutex_lock (&mutex_user_data);
+	
 	ifstream inputfile("databases/users.txt");
 	map<string,string> un_pass;
 	string line;
@@ -188,17 +197,19 @@ map<string,string> getUsernamePassword() {
 		un_pass.insert(make_pair(temp[0],temp[1]));
 	}
 	inputfile.close();
+	
+	//Unlock
+	pthread_mutex_unlock (&mutex_user_data);
+	
 	return un_pass;
 }
 
-bool iscontain (vector<string> data, string test)
-{
-	for (int i = 0 ; i < data.size(); ++i)
-    	{
+bool iscontain (vector<string> data, string test){
+	for (int i = 0 ; i < data.size(); ++i){
 		if(data.at(i)==test)
 			return true;
 	}
-return false;
+	return false;
 }
 
 vector<string> getGroupName() {
@@ -244,7 +255,6 @@ bool isGroupExist(string group_name)
 
 bool create_group(string group_name, string nama)
 {
-
 	ifstream inputfile("databases/group.txt");
 	string line;
 	vector<string> temp;
@@ -327,12 +337,19 @@ bool signup (string username, string password) {
 	map<string,string>::iterator it = un_pass.find(username);
 	if(it == un_pass.end()) { //berarti username belum ada
 		ofstream outputfile;
+		
+		//Lock
+		pthread_mutex_lock (&mutex_user_data);
+		
 		outputfile.open("databases/users.txt");
 		for(it = un_pass.begin();it!=un_pass.end();++it) {
 			outputfile << it->first << " " << it->second << endl;
 		}
 		outputfile << username << " " << password << endl;
 		outputfile.close();
+		//Unlock
+		pthread_mutex_unlock (&mutex_user_data);
+		
 		return true;
 	} else {
 		return false;
@@ -348,6 +365,33 @@ bool login (string username, string password) {
 	} else { //cek password
 		return (it->second == password);
 	}
+}
+
+int recvStringFrom(int socketId, char* server_reply){
+	string msg="";
+	int code;
+	int cum = 0;
+	char from_server[2];
+	
+	//Baca dari server per byte sampai ketemu null character
+	while(code = recv(socketId, from_server, 1, 0) > 0){
+		if(from_server[0] == '\0'){
+			break;
+		}else{
+			msg += from_server[0];
+			++cum;
+		}
+	}
+	
+	printf("Hasil pembacaan recvString From %s\n",msg.c_str());
+	
+	//Masukkan sebuah string message dari server atau string setengah jadi
+	server_reply = strcpy(server_reply,msg.c_str());
+	
+	if(code<=0) //kode error atau client tutup
+		return code;
+	else 
+		return cum; //banyaknya karakter
 }
 
 void *connection_handler(void *);
@@ -407,9 +451,14 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 	printf("Server socket listening\n");
-	
-	
+		
 	printf("Waiting for incoming connection...\n");
+	
+	/*
+	 * Initialize mutex
+	 */
+	pthread_mutex_init(&mutex_user_data, NULL);
+	pthread_mutex_init(&mutex_group_data, NULL);
 	
 	/* Accept connection
 	 * int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
@@ -431,21 +480,22 @@ int main(int argc, char *argv[]){
 	}
 	
 	close(serverSocket);
+	/*
+	 * Destroy mutex
+	 */
+	pthread_mutex_destroy(&mutex_user_data); 
+	pthread_mutex_destroy(&mutex_group_data); 
 	
 	return 0;
  }
 
 void *connection_handler(void *connectionSocket){
 	int clientSocket = *(int*)connectionSocket;
-	
-	/*Mulai dari sini adalah contoh untuk dan akan dihapus 
-	 *==================================================== 
-	 * 
-	 */
+
 	int read_size;
 	char *message, client_message[2000];
 
-	while((read_size = recv(clientSocket, client_message, 2000, 0)) > 0 ) {
+	while((read_size = recvStringFrom(clientSocket, client_message)) > 0 ) {
         char* feedback;
 		vector<string> input = splitchar(client_message);
 		if(input[0] == "signup") {
@@ -465,7 +515,7 @@ void *connection_handler(void *connectionSocket){
 			} else {
 				bool login_stat = login(input[1], input[2]);
 				if(login_stat) {
-					feedback = (char*) "Login success\n";
+					feedback = (char*) "Login success\n\0";
 					map<int,string>::iterator ite;
 					
 					ite = logged_in_users.find(clientSocket);
@@ -549,9 +599,9 @@ void *connection_handler(void *connectionSocket){
 								string sender = ite -> second;
 								cout << "Kirim ke orang lain" << endl;
 								feedback = (char*) "Message: ";
-								write(clientSocket, feedback, strlen(feedback));
+								write(clientSocket, feedback, strlen(feedback)+1);
 								memset(client_message,0,sizeof(client_message));
-								read_size = recv(clientSocket, client_message, 2000, 0);
+								read_size = recvStringFrom(clientSocket, client_message);
 								cout << "Pesannya: " << client_message << endl;
 								feedback = (char*) "Message sent.";
 								inputMessage(sender,receiver,client_message);
@@ -593,7 +643,7 @@ void *connection_handler(void *connectionSocket){
 				}
 			}
 		}
-        write(clientSocket, feedback, strlen(feedback));
+        write(clientSocket, feedback, strlen(feedback)+1);
         free(message);
         memset(client_message,0,sizeof(client_message));
     }
@@ -605,3 +655,6 @@ bool is_username_exits(string username) {
 	map<string,string>::iterator it = un_pass.find(username);
 	return (it != un_pass.end());
 }
+
+
+

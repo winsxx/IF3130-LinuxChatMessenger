@@ -1,9 +1,6 @@
 1
 winson
-2
-1417534022
+1
+1417572463
 me
-Tes kirim message
-1417534053
-me
-Tes
+Ini loh pesan dari saya

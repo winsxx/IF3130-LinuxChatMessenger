@@ -98,6 +98,17 @@ int main(int argc, char** argv){
         if(string_token[0].compare("show") == 0 && string_token.size()>1){
 			loadMessage();
 			showMessage(string_token[1]);
+			if(recvStringFrom(sock, server_reply) < 0) {
+				puts("fail to load new messages");
+				break;
+			} else{
+				//Dilakukan jika yang diterima bukan "/0"
+				if (strlen(server_reply) > 0){
+					//addMessage(/*      */);
+					puts("----- New Message(s) -----");
+					puts(server_reply);
+				}
+			}
 		}
         
         //Jika logout, keluar dari loop dan close sock, recv server akan menerima return 0
@@ -124,7 +135,8 @@ int main(int argc, char** argv){
 					//Balasan dari server
 					puts(server_reply);
 				}
-				string_token = splitchar(message);
+				//Ini untuk apa?
+				/*string_token = splitchar(message);
 				memset(server_reply,0,sizeof(server_reply));
 				if(recv(sock, server_reply, 2000, 0) < 0) {
             		puts("recv failed");
@@ -133,7 +145,7 @@ int main(int argc, char** argv){
         		puts(server_reply);
         		puts("ok");
         		puts(server_reply);
-        		puts("ok1");
+        		puts("ok1");*/
 			}
         }
     }

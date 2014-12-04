@@ -41,7 +41,25 @@ typedef struct {
 
 vector<message_format> unread;
 
-bool is_username_exits(string username);
+bool is_username_exists(string username);
+
+string getNotifications(string username) {
+	string retval = "";
+	vector<string> messageList;
+
+	int num_of_receiver = unread.size();
+	for (int i = 1; i <= num_of_receiver; ++i) {
+		message_format temp = unread[i-1];
+		if (temp.receiver == username) {
+			int num_of_sender = temp.sender.size();
+			for (map<string,vector<string> >::iterator it1 = temp.sender.begin(); it1 != temp.sender.end(); ++it1) {
+				retval += ("New message(s) from " + it1 -> first + ".\n");
+			}
+			break;
+		}
+	}
+	return retval;
+}
 
 void saveUnreadMessageToDatabase(){
 	ofstream outputfile;
@@ -110,15 +128,35 @@ vector<string> readMessage(string from, string to) {
 			retval = map_it -> second;
 			//setelah itu hapus dari database
 			unread[idx].sender.erase(map_it);
-			if (unread[idx].sender.size() == 0) {
-
+			if (unread[idx].sender.size() == 0) { //buang diri sendiri yang receiver tanpa sender itu loh
+				unread.erase(unread.begin()+idx);
 			}
 			return retval;
 		}
 	}
 }
 
-void inputMessage(string from, string to, string message) {
+bool findSenderReceiverConversationInUnread(string sender, string receiver) {
+	cout << "masuk" << sender << " " << receiver << endl;
+	int idx = -1;
+	for(int i = 0; i < unread.size(); ++i) {
+		if (unread[i].receiver == receiver) {
+			idx = i;
+			break;
+		}
+	}
+	cout << "idx " << idx << endl;
+	if (idx == -1) {
+		return false;
+	} else {
+		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(sender);
+		//printUnread();
+		return (map_it != unread[idx].sender.end()); //kalau ketemu, return true
+	}
+
+}
+
+void inputMessage(string from, string to, string message, bool himself) {
 	cout << "from " << from << " to " << to << " isinya " << message << endl;
 	int idx = -1;
 	for(int i = 0; i < unread.size(); ++i) {
@@ -133,7 +171,7 @@ void inputMessage(string from, string to, string message) {
 		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(from);
 		if(map_it != unread[idx].sender.end()) { //tambahkan aja ke vector, karena receiver uda ada, sender juga ada
 			vector<string> vec_tmp = map_it -> second;
-			vec_tmp.push_back(getDateTime() + " " + from + " : " +  message);
+			vec_tmp.push_back(getDateTime() + " " + (himself ? to : from) + " : " +  message);
 			cout << "Isinya\n";
 			for (int x = 0; x < vec_tmp.size(); ++x) {
 				cout << vec_tmp[x] << endl;
@@ -145,12 +183,12 @@ void inputMessage(string from, string to, string message) {
 			// unread[idx].sender = *map_it;
 		} else { //ada receiver, tp ga ada sender, makanya perlu tambah sender
 			vector<string> vec_tmp;
-			vec_tmp.push_back(getDateTime() + " " + from + " : " +  message);
+			vec_tmp.push_back(getDateTime() + " " + (himself ? to : from) + " : " +  message);
 			unread[idx].sender.insert(make_pair(from,vec_tmp));
 		}
 	} else {
 		vector<string> vec_tmp;
-		vec_tmp.push_back(getDateTime() + " " + from + " : " +  message);
+		vec_tmp.push_back(getDateTime() + " " + (himself ? to : from) + " : " +  message);
 		
 		map<string,vector<string> > map_tmp;
 		map_tmp.insert(make_pair(from,vec_tmp));
@@ -318,7 +356,7 @@ bool create_group(string group_name, string nama)
 
 
 	//kemungkinan: berhasil bikin, gagal karena udah ada
-	if(isGroupExist(group_name) || is_username_exits(group_name)) //group udah ada
+	if(isGroupExist(group_name) || is_username_exists(group_name)) //group udah ada
 		return false;
 	else //group belum ada
 	{
@@ -604,33 +642,28 @@ void *connection_handler(void *connectionSocket){
 					for(ite =  logged_in_users.begin(); ite!=logged_in_users.end(); ++ite) {
 						cout << ite->first << " " << ite->second << endl;
 					}
+					feedback = (char*) (string(feedback) + getNotifications(input[1])).c_str();
 				} else {
 					feedback = (char*) "Invalid username or password\n" ;
 				}
 			}
 		} else if (input[0] == "create") {
-			if(input.size() != 2)
-			{
+			if(input.size() != 2) {
 				feedback = (char*) "Error format penulisan login.\nFormat: create [nama group]\n";
 			}
 			else{
 				map<int,string>::iterator ite;
 				ite = logged_in_users.find(clientSocket);
 				string group_name = input[1];
-				if(create_group(group_name, ite -> second))
-				{
-
+				if(create_group(group_name, ite -> second)) {
 					feedback = (char*) ("Group " + group_name + " created").c_str();
-
-
 				}	
 				else
 					feedback = (char*) ("Cannot create " + group_name).c_str();
 			}
 
 		} else if(input[0] == "join") {
-			if(input.size() != 2)
-			{
+			if(input.size() != 2) {
 				feedback = (char*) "Error format penulisan login.\nFormat: join [nama group]\n";
 			}
 			else
@@ -644,12 +677,10 @@ void *connection_handler(void *connectionSocket){
 			}
 
 		} else if(input[0] == "leave") {
-			if(input.size() != 2)
-			{
+			if(input.size() != 2) {
 				feedback = (char*) "Error format penulisan login.\nFormat: leave [nama group]\n";
 			}
-			else
-			{
+			else {
 				map<int,string>::iterator ite;
 				ite = logged_in_users.find(clientSocket);
 				if(leave_group(input[1], ite -> second))
@@ -659,39 +690,44 @@ void *connection_handler(void *connectionSocket){
 			}
 
 		} else if (input[0] == "message") {
-				map<int,string>::iterator ite;
-				ite = logged_in_users.find(clientSocket);
-				if (ite == logged_in_users.end()) { //berarti belum log in
-					feedback = (char*) "Anda belum login!\n";
+			map<int,string>::iterator ite;
+			ite = logged_in_users.find(clientSocket);
+			if (ite == logged_in_users.end()) { //berarti belum log in
+				feedback = (char*) "Anda belum login!\n";
+			} else {
+				if (input.size() != 2) {
+					feedback = (char*) "Error format message user/group.\nFormat: message [user_name/group_name]\n";
 				} else {
-					if (input.size() != 2) {
-						feedback = (char*) "Error format message user/group.\nFormat: message [user_name/group_name]\n";
-					} else {
-						bool un_exists = is_username_exits(input[1]);
-						if(un_exists) {
-							if (ite -> second == input[1]) {
-								cout << "Kirim ke sendiri" << endl;
-								feedback = (char*) "Error tidak boleh kirim pesan ke diri sendiri\n";
-							} else {
-								string receiver = input[1];
-								string sender = ite -> second;
-								cout << "Kirim ke orang lain" << endl;
-								feedback = (char*) "Message: ";
-								write(clientSocket, feedback, strlen(feedback)+1);
-								memset(client_message,0,sizeof(client_message));
-								read_size = recvStringFrom(clientSocket, client_message);
-								cout << "Pesannya: " << client_message << endl;
-								feedback = NULL;
-								feedback = (char*) "Message sent.";
-								inputMessage(sender,receiver,client_message);
-								printUnread();
-							}
+					bool un_exists = is_username_exists(input[1]);
+					if(un_exists) {
+						if (ite -> second == input[1]) {
+							cout << "Kirim ke sendiri" << endl;
+							feedback = (char*) "Error tidak boleh kirim pesan ke diri sendiri\n";
 						} else {
-							feedback = (char*) (input[1] + " doesn't exist").c_str();
+							string receiver = input[1];
+							string sender = ite -> second;
+							cout << "Kirim ke orang lain" << endl;
+							feedback = (char*) "Message: ";
+							write(clientSocket, feedback, strlen(feedback)+1);
+							memset(client_message,0,sizeof(client_message));
+							read_size = recvStringFrom(clientSocket, client_message);
+							cout << "Pesannya: " << client_message << endl;
+							feedback = NULL;
+							inputMessage(sender,receiver,client_message,false);
+							if(findSenderReceiverConversationInUnread(receiver, sender)) { //dibalik apakah kita menerima pesan dari orang tersebut
+								inputMessage(receiver,sender,client_message,true); //masukkan ke diri sendiri
+								feedback = (char*) "1";
+							} else { //surun simpan di client
+								feedback = (char*) ("0" + string(client_message)).c_str();
+							}
+							printUnread();
 						}
+					} else {
+						feedback = (char*) (input[1] + " doesn't exist").c_str();
 					}
-					//read_size = recv(clientSocket, client_message, 2000, 0);
 				}
+				feedback = (char*) (string(feedback) + getNotifications(input[1])).c_str();
+			}
 		} else if (input[0] == "show") {
 			map<int,string>::iterator ite;
 			ite = logged_in_users.find(clientSocket);
@@ -701,7 +737,7 @@ void *connection_handler(void *connectionSocket){
 				if (input.size() != 2) {
 					feedback = (char*) "Error format show conversation.\nFormat: show [user_name/group_name]\n";
 				} else {
-					bool un_exists = is_username_exits(input[1]);
+					bool un_exists = is_username_exists(input[1]);
 					if(un_exists) {
 						if (ite -> second == input[1]) {
 							cout << "Kirim ke sendiri" << endl;
@@ -720,6 +756,7 @@ void *connection_handler(void *connectionSocket){
 						}
 					}
 				}
+				feedback = (char*) (string(feedback) + getNotifications(input[1])).c_str();
 			}
 		}
         write(clientSocket, feedback, strlen(feedback)+1);
@@ -734,11 +771,8 @@ void *connection_handler(void *connectionSocket){
 	return 0;
 }
 
-bool is_username_exits(string username) {
+bool is_username_exists(string username) {
 	map<string,string> un_pass = getUsernamePassword();
 	map<string,string>::iterator it = un_pass.find(username);
 	return (it != un_pass.end());
 }
-
-
-

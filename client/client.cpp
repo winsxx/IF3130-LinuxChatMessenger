@@ -96,8 +96,8 @@ int main(int argc, char** argv){
         //Tampilkan pesan dengan user
         string_token = splitchar(message);
         if(string_token[0].compare("show") == 0 && string_token.size()>1){
-			loadMessage();
-			showMessage(string_token[1]);
+			// loadMessage();
+			// showMessage(string_token[1]);
 		}
         
         //Jika logout, keluar dari loop dan close sock, recv server akan menerima return 0
@@ -123,17 +123,8 @@ int main(int argc, char** argv){
 				} else{
 					//Balasan dari server
 					puts(server_reply);
+					puts("sus dulu");
 				}
-				string_token = splitchar(message);
-				memset(server_reply,0,sizeof(server_reply));
-				if(recv(sock, server_reply, 2000, 0) < 0) {
-            		puts("recv failed");
-            		break;
-        		}
-        		puts(server_reply);
-        		puts("ok");
-        		puts(server_reply);
-        		puts("ok1");
 			}
         }
     }

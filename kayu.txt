@@ -4,6 +4,9 @@
 [2014-12-4 22:34] kayu : TEs kirim pesan
 [2014-12-4 22:38] kayu : Hey winson
 [2014-12-4 22:39] winson : TEs kriim pesan
+<<<<<<< HEAD
 [2014-12-4 22:43é
 [2014-12-4 23:09] kayu : Yu, gw mau tanya sesuatu nih
 [2014-12-4 23:09] winson : Tes123
+=======
+>>>>>>> 768288cc4d0627912018512c90f0dd5e5d7b8d17

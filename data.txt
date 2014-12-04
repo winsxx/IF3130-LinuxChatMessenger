@@ -1,6 +1,4 @@
 1
 winson
-1
-1417572463
-me
-Ini loh pesan dari saya
+Tes kirim pesan
+

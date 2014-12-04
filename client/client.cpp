@@ -23,15 +23,11 @@
 #include <ctime>
 using namespace std;
 
-map<string, string > message_list;
 
 //Daftar fungsi
-void saveMessage();
-void loadMessage();
-void showMessage(string user);
-void addMessage(string user, string isi);
+void saveMessage(string user, string content);
+string loadMessage(string user);
 int recvStringFrom(int socketId, char* server_reply);
-string getTimeString(time_t waktu);
 
 /*
  * Masukan berupa sebuah baris string yang katanya dipisahkan spasi
@@ -96,30 +92,15 @@ int main(int argc, char** argv){
         //Tampilkan pesan dengan user
         string_token = splitchar(message);
         if(string_token[0].compare("show") == 0 && string_token.size()>1){
-			loadMessage();
-			showMessage(string_token[1]);
-			if(recvStringFrom(sock, server_reply) < 0) {
-				puts("fail to load new messages");
-				break;
-			} else{
-				//Dilakukan jika yang diterima bukan "/0"
-				if (strlen(server_reply) > 0){
-					//addMessage(/*      */);
-					puts("----- New Message(s) -----");
-					puts(server_reply);
-				}
+			string content = loadMessage(string_token[1]);
+			cout << content;
+			if (strcmp(server_reply,"") != 0){
+				puts("----- New Message(s) -----");
+				content += string(server_reply);
+				saveMessage(string_token[1], content);
+				printf("%s",server_reply);
 			}
-		}
-        
-        //Jika logout, keluar dari loop dan close sock, recv server akan menerima return 0
-        if(string_token[0].compare("logout") == 0){
-			break;
-		}
-		
-		//Balasan dari server
-        puts(server_reply);
-        
-        if (strcmp(server_reply,"Message: ")==0) {
+		} else if (strcmp(server_reply,"Message: ")==0) {
         	gets(message2);
         	message2[strlen(message2)] ='\0';
         	if(send(sock , message2, strlen(message2)+1, 0) < 0) {
@@ -133,21 +114,24 @@ int main(int argc, char** argv){
 					break;
 				} else{
 					//Balasan dari server
+					string pesan = string(server_reply);
 					puts(server_reply);
+					if(pesan[0]=='0'){
+						pesan.erase(pesan.begin());
+						string content = loadMessage(string_token[1]);
+						content.append(pesan);
+						saveMessage(string_token[1],content);
+						puts(" -------------- Ini berarti pesan yang hrs langsung disimpan ke dalam client");
+					}
 				}
-				//Ini untuk apa?
-				/*string_token = splitchar(message);
-				memset(server_reply,0,sizeof(server_reply));
-				if(recv(sock, server_reply, 2000, 0) < 0) {
-            		puts("recv failed");
-            		break;
-        		}
-        		puts(server_reply);
-        		puts("ok");
-        		puts(server_reply);
-        		puts("ok1");*/
 			}
-        }
+        } else if(string_token[0].compare("logout") == 0){ //Jika logout, keluar dari loop dan close sock, recv server akan menerima return 0
+			break;
+		} else{
+			//Balasan dari server
+			puts(server_reply);
+		}
+        
     }
 	
 	close(sock);
@@ -157,66 +141,33 @@ int main(int argc, char** argv){
 
 
 //Menyimpan message ke database
-void saveMessage(){
+void saveMessage(string user, string content){
 	ofstream message_file;
-	message_file.open("data.txt");
+	message_file.open((user+".txt").c_str());
 	//Tulis jumlah user
-	message_file << message_list.size() <<endl;
+	message_file << content;
 	
-	//Ulang sebanyak jumlah user
-	for(map<string, string>::iterator it = message_list.begin();it != message_list.end(); it++){
-		//Tulis nama user
-		message_file << it->first << endl;
-		//Tulis semua message dengan user
-		message_file << it->second << endl;
-	}
 	message_file.close();
 }
 
 
 //Mengambil data message dari database
-void loadMessage(){
+string loadMessage(string user){
 	ifstream message_file;
-	message_list.clear();
-	message_file.open("data.txt");
+	message_file.open((user+".txt").c_str());
 	
+	string content="";
 	string line;
 	
-	//Baca jumlah user
-	getline(message_file, line);
-	int user_size;
-	sscanf(line.c_str(), "%d", &user_size);
+	//Baca semua isi
+	while(getline(message_file, line)){
+		content+=line;
+		content+="\n";
+	}
 	
-	//Ulang sebanyak jumlah user
-	for(int i=0; i<user_size; i++){
-		//Baca nama "user_name"
-		string user_name;
-		getline(message_file, user_name);
-		
-		//Baca message "user_name"
-		string content;
-		getline(message_file, content);
-		
-		message_list[user_name] = content;
-	}
 	message_file.close();
-}
-
-//Menampilkan message percakapan dengan 'user'
-void showMessage(string user){
-	map<string, string >::iterator it = message_list.find(user);
-	if(it == message_list.end()){
-		cout<< "User message not exist" <<endl;
-	} else {
-		string message_content;
-		message_content = it->second;
-		cout << message_content;
-	}
-}
-
-//Tambah pesan dari user
-void addMessage(string user, string isi){
-	message_list[user] += isi;
+	
+	return content;
 }
 
 int recvStringFrom(int socketId, char* server_reply){

@@ -51,9 +51,11 @@ string getNotifications(string username) {
 	for (int i = 1; i <= num_of_receiver; ++i) {
 		message_format temp = unread[i-1];
 		if (temp.receiver == username) {
+			cout << i << " " << temp.receiver << endl;
 			int num_of_sender = temp.sender.size();
+			cout << num_of_sender << endl;
 			for (map<string,vector<string> >::iterator it1 = temp.sender.begin(); it1 != temp.sender.end(); ++it1) {
-				retval += ("New message(s) from " + it1 -> first + ".\n");
+				retval += ("New message(s) from " + it1 -> first + "\n");
 			}
 			break;
 		}
@@ -61,32 +63,7 @@ string getNotifications(string username) {
 	return retval;
 }
 
-void saveUnreadMessageToDatabase(){
-	ofstream outputfile;
-	outputfile.open("databases/read.txt");
-	int num_of_receiver = unread.size();
-	outputfile << num_of_receiver << endl;
-	for (int i = 1; i <= num_of_receiver; ++i) {
-		message_format temp = unread[i-1];
-		outputfile << temp.receiver << endl;
-		int num_of_sender = temp.sender.size();
-		outputfile << num_of_sender<<endl;
-
-		for (map<string,vector<string> >::iterator it1 = temp.sender.begin(); it1 != temp.sender.end(); ++it1) {
-			string sender_name = it1 -> first;
-			int num_of_message = (it1 -> second).size();
-			outputfile << sender_name << endl;
-			outputfile << num_of_message << endl;
-			vector<string> array_of_msg;
-			for (int k = 1; k <= num_of_message; ++k) {
-				string message_tmp = (it1 -> second)[k-1];
-				outputfile << message_tmp << endl;
-			}
-		}
-	}
-	outputfile.close();
-}
-
+void saveUnreadMessageToDatabase();
 
 string getDateTime() {
 	time_t t = time(0);   // get time now
@@ -131,6 +108,7 @@ vector<string> readMessage(string from, string to) {
 			if (unread[idx].sender.size() == 0) { //buang diri sendiri yang receiver tanpa sender itu loh
 				unread.erase(unread.begin()+idx);
 			}
+			saveUnreadMessageToDatabase();
 			return retval;
 		}
 	}
@@ -153,7 +131,6 @@ bool findSenderReceiverConversationInUnread(string sender, string receiver) {
 		//printUnread();
 		return (map_it != unread[idx].sender.end()); //kalau ketemu, return true
 	}
-
 }
 
 void inputMessage(string from, string to, string message, bool himself) {
@@ -198,6 +175,7 @@ void inputMessage(string from, string to, string message, bool himself) {
 		mf.sender = map_tmp;
 		unread.push_back(mf);
 	}
+	saveUnreadMessageToDatabase();
 }
 
 void loadUnreadMessageFromDatabase() {
@@ -726,7 +704,7 @@ void *connection_handler(void *connectionSocket){
 						feedback = (char*) (input[1] + " doesn't exist").c_str();
 					}
 				}
-				feedback = (char*) (string(feedback) + getNotifications(input[1])).c_str();
+				feedback = (char*) (string(feedback) + getNotifications(ite -> second)).c_str();
 			}
 		} else if (input[0] == "show") {
 			map<int,string>::iterator ite;
@@ -743,20 +721,25 @@ void *connection_handler(void *connectionSocket){
 							cout << "Kirim ke sendiri" << endl;
 							feedback = (char*) "Error tidak boleh lihat pesan ke diri sendiri\n";
 						} else {
+							cout << "MAMA" << endl;
 							string sender = input[1];
 							string receiver = ite -> second;
 							printUnread();
 							vector<string> msg =  readMessage(sender,receiver); //from, to
 							string pesan = "";
 							for(int p = 0; p < msg.size(); ++p) { //vector ke string
-								pesan += (msg[p] + '\n');
+ 								pesan += (msg[p] + "\n");
 							}
 							feedback = (char*) pesan.c_str();
 							printUnread();
 						}
 					}
 				}
-				feedback = (char*) (string(feedback) + getNotifications(input[1])).c_str();
+				string fb = string(feedback);
+				string notif =  getNotifications(ite -> second);
+				string res = fb + notif;
+				feedback = NULL;
+				feedback = (char*) res.c_str();
 			}
 		}
         write(clientSocket, feedback, strlen(feedback)+1);
@@ -775,4 +758,31 @@ bool is_username_exists(string username) {
 	map<string,string> un_pass = getUsernamePassword();
 	map<string,string>::iterator it = un_pass.find(username);
 	return (it != un_pass.end());
+}
+
+void saveUnreadMessageToDatabase(){
+	cout << "MASUK asdf" << endl;
+	ofstream outputfile;
+	outputfile.open("databases/unread.txt");
+	int num_of_receiver = unread.size();
+	outputfile << num_of_receiver << endl;
+	for (int i = 1; i <= num_of_receiver; ++i) {
+		message_format temp = unread[i-1];
+		outputfile << temp.receiver << endl;
+		int num_of_sender = temp.sender.size();
+		outputfile << num_of_sender<<endl;
+
+		for (map<string,vector<string> >::iterator it1 = temp.sender.begin(); it1 != temp.sender.end(); ++it1) {
+			string sender_name = it1 -> first;
+			int num_of_message = (it1 -> second).size();
+			outputfile << sender_name << endl;
+			outputfile << num_of_message << endl;
+			vector<string> array_of_msg;
+			for (int k = 1; k <= num_of_message; ++k) {
+				string message_tmp = (it1 -> second)[k-1];
+				outputfile << message_tmp << endl;
+			}
+		}
+	}
+	outputfile.close();
 }

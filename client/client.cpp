@@ -88,7 +88,7 @@ int main(int argc, char** argv){
             puts("recv failed");
             break;
         }
-        
+
         //Tampilkan pesan dengan user
         string_token = splitchar(message);
         if(string_token[0].compare("show") == 0 && string_token.size()>1){
@@ -105,7 +105,6 @@ int main(int argc, char** argv){
         if(string_token[0].compare("logout") == 0){
 			break;
 		}
-
         
         if (strcmp(server_reply,"Message: ")==0) {
         	puts(server_reply);
@@ -124,7 +123,9 @@ int main(int argc, char** argv){
 				} else{
 					//Balasan dari server
 					string pesan = string(server_reply);
+					puts("ok");
 					puts(server_reply);
+					puts("ok");
 					if(pesan[0]=='0'){
 						pesan.erase(pesan.begin());
 						string content = loadMessage(string_token[1]);

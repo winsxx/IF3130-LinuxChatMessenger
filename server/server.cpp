@@ -133,8 +133,8 @@ bool findSenderReceiverConversationInUnread(string sender, string receiver) {
 	}
 }
 
-void inputMessage(string from, string to, string message, bool himself) {
-	cout << "from " << from << " to " << to << " isinya " << message << endl;
+void inputMessage(string from, string to, string message, bool himself, string another_because_of_group = "") {
+	cout << "ANOTHER " << another_because_of_group << endl;
 	int idx = -1;
 	for(int i = 0; i < unread.size(); ++i) {
 		if (unread[i].receiver == to) {
@@ -148,7 +148,7 @@ void inputMessage(string from, string to, string message, bool himself) {
 		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(from);
 		if(map_it != unread[idx].sender.end()) { //tambahkan aja ke vector, karena receiver uda ada, sender juga ada
 			vector<string> vec_tmp = map_it -> second;
-			vec_tmp.push_back(getDateTime() + " " + (himself ? to : from) + " : " +  message);
+			vec_tmp.push_back(getDateTime() + " " + (another_because_of_group != "" ? another_because_of_group : (himself ? to : from)) + " : " +  message);
 			cout << "Isinya\n";
 			for (int x = 0; x < vec_tmp.size(); ++x) {
 				cout << vec_tmp[x] << endl;
@@ -160,12 +160,12 @@ void inputMessage(string from, string to, string message, bool himself) {
 			// unread[idx].sender = *map_it;
 		} else { //ada receiver, tp ga ada sender, makanya perlu tambah sender
 			vector<string> vec_tmp;
-			vec_tmp.push_back(getDateTime() + " " + (himself ? to : from) + " : " +  message);
+			vec_tmp.push_back(getDateTime() + " " + (another_because_of_group != "" ? another_because_of_group : (himself ? to : from)) + " : " +  message);
 			unread[idx].sender.insert(make_pair(from,vec_tmp));
 		}
 	} else {
 		vector<string> vec_tmp;
-		vec_tmp.push_back(getDateTime() + " " + (himself ? to : from) + " : " +  message);
+		vec_tmp.push_back(getDateTime() + " " + (another_because_of_group != "" ? another_because_of_group : (himself ? to : from)) + " : " +  message);
 		
 		map<string,vector<string> > map_tmp;
 		map_tmp.insert(make_pair(from,vec_tmp));
@@ -324,6 +324,36 @@ bool isGroupExist(string group_name)
 	inputfile.close();
 	pthread_mutex_unlock(&mutex_group_data);
 	return false;
+}
+
+
+vector<string> getGroupMember(string group_name) {
+	vector<string> v;
+	if(!isGroupExist(group_name)) {
+
+	} else {
+		ifstream inputfile("databases/group.txt");
+		string line;
+		while(getline(inputfile, line)) {
+			char param[1000];
+			strcpy(param, line.c_str());
+			vector<string> temp = splitchar(param);
+			if(group_name==temp[0]){
+				v.push_back(temp[1]);
+			}
+		}
+		inputfile.close();
+	}
+	return v;
+}
+
+void inputMessageGroup(string from, string to, string message, bool himself){
+	vector<string> recipient = getGroupMember(to);
+	for(vector<string>::iterator itv = recipient.begin(); itv != recipient.end(); ++itv) {
+		if(*itv != from) {
+			inputMessage(to, *itv, message, false, from);
+		}
+	}
 }
 
 bool create_group(string group_name, string nama)
@@ -684,6 +714,8 @@ void *connection_handler(void *connectionSocket){
 					feedback = (char*) "Error format message user/group.\nFormat: message [user_name/group_name]\n";
 				} else {
 					bool un_exists = is_username_exists(input[1]);
+					bool group_exists = isGroupExist(input[1]);
+					cout << un_exists << " " << group_exists << endl;
 					if(un_exists) {
 						if (ite -> second == input[1]) {
 							cout << "Kirim ke sendiri" << endl;
@@ -691,28 +723,52 @@ void *connection_handler(void *connectionSocket){
 						} else {
 							string receiver = input[1];
 							string sender = ite -> second;
-							cout << "Kirim ke orang lain" << endl;
 							feedback = (char*) "Message: ";
+							cout << "tulis balasan" << endl;
 							write(clientSocket, feedback, strlen(feedback)+1);
+							cout << "tulis balasan1" << endl;
 							memset(client_message,0,sizeof(client_message));
 							read_size = recvStringFrom(clientSocket, client_message);
-							cout << "Pesannya: " << client_message << endl;
+							cout << "client msg: " << client_message << endl;
 							feedback = NULL;
 							inputMessage(sender,receiver,client_message,false);
 							if(findSenderReceiverConversationInUnread(receiver, sender)) { //dibalik apakah kita menerima pesan dari orang tersebut
 								inputMessage(receiver,sender,client_message,true); //masukkan ke diri sendiri
-								feedback = (char*) "1";
+								feedback = NULL;
 							} else { //surun simpan di client
 								string pesan = "0" + getDateTime() +" "+ ite -> second + " : " + string(client_message) + "\n";
 								feedback = (char * ) pesan.c_str();
 							}
 							printUnread();
 						}
+					} else if (group_exists) {
+						cout << "group " << endl; 
+						string receiver = input[1];
+						string sender = ite -> second;
+						feedback = (char*) "Message: ";
+						write(clientSocket, feedback, strlen(feedback)+1);
+						memset(client_message,0,sizeof(client_message));
+						read_size = recvStringFrom(clientSocket, client_message);
+						feedback = NULL;
+						inputMessageGroup(sender,receiver,client_message,false);
+						if(findSenderReceiverConversationInUnread(receiver, sender)) { //dibalik apakah kita menerima pesan dari orang tersebut
+							inputMessage(receiver,sender,client_message,true); //masukkan ke diri sendiri
+							feedback = (char*) "1";
+						} else { //surun simpan di client
+							string pesan = "0" + getDateTime() +" "+ ite -> second + " : " + string(client_message) + "\n";
+							feedback = (char * ) pesan.c_str();
+						}
 					} else {
+						cout << "not exist" << endl;
 						feedback = (char*) (input[1] + " doesn't exist").c_str();
 					}
 				}
-				feedback = (char*) (string(feedback) + getNotifications(ite -> second)).c_str();
+				string fb = string(feedback);
+				string notif =  getNotifications(ite -> second);
+				string res = fb + notif;
+				feedback = NULL;
+				feedback = (char*) res.c_str();
+				printUnread();
 			}
 		} else if (input[0] == "show") {
 			map<int,string>::iterator ite;
@@ -724,7 +780,8 @@ void *connection_handler(void *connectionSocket){
 					feedback = (char*) "Error format show conversation.\nFormat: show [user_name/group_name]\n";
 				} else {
 					bool un_exists = is_username_exists(input[1]);
-					if(un_exists) {
+					bool group_exists = isGroupExist(input[1]);
+					if(un_exists || group_exists) {
 						if (ite -> second == input[1]) {
 							cout << "Kirim ke sendiri" << endl;
 							feedback = (char*) "Error tidak boleh lihat pesan ke diri sendiri\n";
@@ -741,6 +798,9 @@ void *connection_handler(void *connectionSocket){
 							feedback = (char*) pesan.c_str();
 							printUnread();
 						}
+					} else {
+						cout << "not exist" << endl;
+						feedback = (char*) (input[1] + " doesn't exist").c_str();
 					}
 				}
 				string fb = string(feedback);
@@ -749,6 +809,8 @@ void *connection_handler(void *connectionSocket){
 				feedback = NULL;
 				feedback = (char*) res.c_str();
 			}
+		} else {
+			feedback = (char* ) "command not exists";
 		}
         write(clientSocket, feedback, strlen(feedback)+1);
         free(message);
@@ -769,7 +831,6 @@ bool is_username_exists(string username) {
 }
 
 void saveUnreadMessageToDatabase(){
-	cout << "MASUK asdf" << endl;
 	ofstream outputfile;
 	outputfile.open("databases/unread.txt");
 	int num_of_receiver = unread.size();

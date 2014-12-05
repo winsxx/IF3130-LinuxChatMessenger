@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 2
 winson
 1
@@ -13,3 +14,23 @@ kayu
 kiki
 1
 [2014-12-5 8:02] kiki : Tes kirim pesan, ini dari kiki
+=======
+3
+winson
+1
+red_dot
+2
+[2014-12-5 8:06] willy : hai red_dot
+[2014-12-5 8:06] ivana : woi susu dulu
+kayu
+1
+red_dot
+2
+[2014-12-5 8:06] willy : hai red_dot
+[2014-12-5 8:06] ivana : woi susu dulu
+willy
+1
+red_dot
+1
+[2014-12-5 8:06] ivana : woi susu dulu
+>>>>>>> 90df9bafd53235ab03efcb52bc5f0e0f23054185

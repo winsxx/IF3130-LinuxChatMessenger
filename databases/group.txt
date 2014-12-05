@@ -1,13 +1,15 @@
 red_dot ivana
 red_dot willy
-red_dot clairine
+red_dot winson
+red_dot kayu
 white_dot ivana
-ivana clairine
-white_dot aaa
 ayam ivana
 sapi ivana
+<<<<<<< HEAD
 googoo kayu
 red_dot kayu
 itb winson
+=======
+>>>>>>> 90df9bafd53235ab03efcb52bc5f0e0f23054185
 itb kayu
 itb kiki

@@ -114,6 +114,7 @@ int main(int argc, char** argv){
             	puts("Send failed");
 	            return 1;
 	        } else {
+				puts("Message sent.");
 				memset(server_reply,0,sizeof(server_reply));
 				//Receive a reply from the server
 				if(recvStringFrom(sock, server_reply) < 0) {
@@ -134,7 +135,7 @@ int main(int argc, char** argv){
 					}
 				}
 			}
-        } else {
+        } else{
 			//Balasan dari server
 			puts(server_reply);
 		}

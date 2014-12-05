@@ -5,5 +5,11 @@ red_dot kayu
 white_dot ivana
 ayam ivana
 sapi ivana
-itb kayu
+<<<<<<< HEAD
+googoo kayu
+red_dot kayu
 itb winson
+=======
+>>>>>>> 90df9bafd53235ab03efcb52bc5f0e0f23054185
+itb kayu
+itb kiki

@@ -453,6 +453,13 @@ bool leave_group(string group_name, string nama)
 		}
 		inputfile.close();
 		
+		ofstream outputfile;
+		outputfile.open("databases/group.txt");
+		 for (int i = 0 ; i < ret.size(); ++i)
+  		{
+		 	outputfile << ret[i] << endl;
+		}
+		outputfile.close();
 		//Unlock 
 		pthread_mutex_unlock(&mutex_group_data);
 		return true;

@@ -1,12 +1,9 @@
 red_dot ivana
 red_dot willy
-red_dot clairine
+red_dot winson
+red_dot kayu
 white_dot ivana
-ivana clairine
-white_dot aaa
 ayam ivana
 sapi ivana
-googoo kayu
-red_dot kayu
 itb kayu
 itb winson

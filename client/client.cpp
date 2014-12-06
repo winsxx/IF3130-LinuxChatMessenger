@@ -83,14 +83,26 @@ int main(int argc, char** argv){
             return 1;
         }
 		memset(server_reply,0,sizeof(server_reply));
+		
+		//Tampilkan pesan dengan user
+        string_token = splitchar(message);
+		
+		//Exit
+        if(string_token[0].compare("exit") == 0 && string_token.size()== 1){
+			break;
+		}
+		
         //Receive a reply from the server
         if(recvStringFrom(sock, server_reply) < 0) {
             puts("recv failed");
             break;
         }
 
-        //Tampilkan pesan dengan user
-        string_token = splitchar(message);
+
+        
+
+        
+        //Show
         if(string_token[0].compare("show") == 0 && string_token.size()>1){
 			string content = loadMessage(string_token[1]);
 			cout << content;
@@ -110,6 +122,7 @@ int main(int argc, char** argv){
 			}
 		}
         
+        //Message
         if (strcmp(server_reply,"Message: ")==0) {
         	puts(server_reply);
         	gets(message2);

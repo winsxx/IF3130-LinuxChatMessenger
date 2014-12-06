@@ -1,2 +1,4 @@
-[2014-12-5 7:38] willy : hai ivana
-New message(s) from red_dot
+[2014-12-6 20:10] willy : hai winson
+[2014-12-6 20:10] winson : hai willy
+[2014-12-6 20:10] willy : hai winson_1
+[2014-12-6 20:10] winson : hai willy_v1

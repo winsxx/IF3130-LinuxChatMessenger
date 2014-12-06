@@ -143,3 +143,15 @@
 [2014-12-6 17:30] winson messaged toki
 [2014-12-6 17:31] winson logged out
 [2014-12-6 17:31] ivana logged out
+[2014-12-6 20:09] Server starts
+[2014-12-6 20:10] willy logged in
+[2014-12-6 20:10] winson logged in
+[2014-12-6 20:10] willy messaged winson
+[2014-12-6 20:10] winson messaged willy
+[2014-12-6 20:10] willy messaged winson
+[2014-12-6 20:10] winson messaged willy
+[2014-12-6 20:11] winson logged out
+[2014-12-6 20:11] willy logged out
+[2014-12-6 20:11] Server starts
+[2014-12-6 20:11] willy logged in
+[2014-12-6 20:12] winson logged in

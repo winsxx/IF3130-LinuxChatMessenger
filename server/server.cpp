@@ -227,9 +227,10 @@ void loadUnreadMessageFromDatabase() {
 			inputfile >> sender_name;
 			inputfile >> num_of_message;
 			vector<string> array_of_msg;
+			string message_tmp;
+			getline(inputfile, message_tmp); //simpan enter
 			for (int k = 1; k <= num_of_message; ++k) {
-				string message_tmp;
-				getline(inputfile, message_tmp);
+				message_tmp="";
 				getline(inputfile, message_tmp);
 				array_of_msg.push_back(message_tmp);
 			}

@@ -1,1 +1,145 @@
 [2014-12-5 9:17] Server starts
+[2014-12-6 13:03] Server starts
+[2014-12-6 13:03] winson logged in
+[2014-12-6 13:04] ivana logged in
+[2014-12-6 13:04] ivana messaged winson
+[2014-12-6 13:05] winson messaged ivana
+[2014-12-6 13:11] Server starts
+[2014-12-6 13:12] ivana logged in
+[2014-12-6 13:12] winson logged in
+[2014-12-6 13:12] ivana messaged winson
+[2014-12-6 13:13] winson messaged ivana
+[2014-12-6 13:13] ivana messaged winson
+[2014-12-6 13:13] winson messaged ivana
+[2014-12-6 13:24] Server starts
+[2014-12-6 13:25] winson logged in
+[2014-12-6 13:25] ivana logged in
+[2014-12-6 13:25] winson messaged ivana
+[2014-12-6 13:26] ivana messaged winson
+[2014-12-6 13:26] winson messaged ivana
+[2014-12-6 13:26] ivana messaged winson
+[2014-12-6 13:53] ivana logged out
+[2014-12-6 13:54] Server starts
+[2014-12-6 13:54] winson logged in
+[2014-12-6 13:54] ivana logged in
+[2014-12-6 13:55] winson messaged ivana
+[2014-12-6 14:00] ivana logged out
+[2014-12-6 14:00] Server starts
+[2014-12-6 14:00] winson logged in
+[2014-12-6 14:01] ivana logged in
+[2014-12-6 14:01] winson messaged ivana
+[2014-12-6 14:01] ivana messaged winson
+[2014-12-6 14:03] ivana messaged winson
+[2014-12-6 14:04] winson logged out
+[2014-12-6 14:04] ivana logged out
+[2014-12-6 14:08] Server starts
+[2014-12-6 14:08] winson logged in
+[2014-12-6 14:08] ivana logged in
+[2014-12-6 14:08] ivana messaged winson
+[2014-12-6 14:09] winson messaged ivana
+[2014-12-6 14:12] Server starts
+[2014-12-6 14:12] winson logged in
+[2014-12-6 14:12] ivana logged in
+[2014-12-6 14:13] winson messaged ivana
+[2014-12-6 14:26] winson logged out
+[2014-12-6 14:30] ivana logged out
+[2014-12-6 14:30] winson logged in
+[2014-12-6 14:34] winson logged out
+[2014-12-6 14:40] Server starts
+[2014-12-6 14:41] winson logged in
+[2014-12-6 14:41] ivana logged in
+[2014-12-6 14:41] ivana messaged winson
+[2014-12-6 14:42] winson messaged ivana
+[2014-12-6 14:43] ivana messaged winson
+[2014-12-6 14:46] ivana logged out
+[2014-12-6 14:46] winson logged out
+[2014-12-6 14:49] Server starts
+[2014-12-6 14:50] winson logged in
+[2014-12-6 14:50] winson messaged ivana
+[2014-12-6 14:50] ivana logged in
+[2014-12-6 14:50] ivana messaged winson
+[2014-12-6 14:51] winson messaged ivana
+[2014-12-6 14:51] winson messaged ivana
+[2014-12-6 14:51] winson logged out
+[2014-12-6 14:51] ivana logged out
+[2014-12-6 15:10] Server starts
+[2014-12-6 15:11] Server starts
+[2014-12-6 15:11] winson logged in
+[2014-12-6 15:11] ivana logged in
+[2014-12-6 15:11] winson messaged ivana
+[2014-12-6 15:12] winson messaged ivana
+[2014-12-6 15:14] Server starts
+[2014-12-6 15:19] Server starts
+[2014-12-6 15:19] winson logged in
+[2014-12-6 15:20] nama signed up
+[2014-12-6 15:20] winson logged in
+[2014-12-6 16:35] Server starts
+[2014-12-6 16:35] winson logged in
+[2014-12-6 16:36] Server starts
+[2014-12-6 16:36] winson logged in
+[2014-12-6 16:38] Server starts
+[2014-12-6 16:38] winson logged in
+[2014-12-6 16:40] Server starts
+[2014-12-6 16:40] winson logged in
+[2014-12-6 16:41] Server starts
+[2014-12-6 16:41] winson logged in
+[2014-12-6 16:42] Server starts
+[2014-12-6 16:43] winson logged in
+[2014-12-6 16:43] winson messaged ivana
+[2014-12-6 16:43] winson logged out
+[2014-12-6 16:46] Server starts
+[2014-12-6 16:47] winson logged in
+[2014-12-6 16:47] winson messaged ivana
+[2014-12-6 16:50] Server starts
+[2014-12-6 16:50] winson logged in
+[2014-12-6 16:50] winson messaged ivana
+[2014-12-6 16:51] winson messaged ivana
+[2014-12-6 16:51] winson logged out
+[2014-12-6 16:51] ivana logged in
+[2014-12-6 16:52] ivana logged out
+[2014-12-6 16:59] Server starts
+[2014-12-6 17:00] winson logged in
+[2014-12-6 17:00] winson logged in
+[2014-12-6 17:02] winson logged out
+[2014-12-6 17:02] Server starts
+[2014-12-6 17:02] winson logged in
+[2014-12-6 17:02] winson logged in
+[2014-12-6 17:04] Server starts
+[2014-12-6 17:05] winson logged in
+[2014-12-6 17:05] winson logged in
+[2014-12-6 17:06] Server starts
+[2014-12-6 17:06] winson logged in
+[2014-12-6 17:07] winson logged in
+[2014-12-6 17:12] Server starts
+[2014-12-6 17:12] winson logged in
+[2014-12-6 17:12] winson logged in
+[2014-12-6 17:12] winson messaged ivana
+[2014-12-6 17:12] winson messaged ivana
+[2014-12-6 17:13] ivana logged in
+[2014-12-6 17:13] ivana messaged winson
+[2014-12-6 17:13] winson messaged ivana
+[2014-12-6 17:19] ivana logged out
+[2014-12-6 17:19] winson logged out
+[2014-12-6 17:20] Server starts
+[2014-12-6 17:20] winson logged in
+[2014-12-6 17:20] ivana logged in
+[2014-12-6 17:20] winson messaged ivana
+[2014-12-6 17:20] winson messaged ivana
+[2014-12-6 17:21] winson messaged ivana
+[2014-12-6 17:21] ivana messaged winson
+[2014-12-6 17:21] winson messaged ivana
+[2014-12-6 17:22] ivana messaged winson
+[2014-12-6 17:22] ivana created group toki
+[2014-12-6 17:22] winson joined group toki
+[2014-12-6 17:23] winson messaged toki
+[2014-12-6 17:23] ivana messaged toki
+[2014-12-6 17:25] ivana messaged toki
+[2014-12-6 17:25] winson messaged toki
+[2014-12-6 17:29] ivana logged out
+[2014-12-6 17:29] Server starts
+[2014-12-6 17:30] winson logged in
+[2014-12-6 17:30] ivana logged in
+[2014-12-6 17:30] ivana messaged toki
+[2014-12-6 17:30] winson messaged toki
+[2014-12-6 17:31] winson logged out
+[2014-12-6 17:31] ivana logged out

@@ -94,10 +94,19 @@ int main(int argc, char** argv){
         if(string_token[0].compare("show") == 0 && string_token.size()>1){
 			string content = loadMessage(string_token[1]);
 			cout << content;
-			if (strcmp(server_reply,"") != 0){
-				puts("----- New Message(s) -----");
-				content += string(server_reply);
-				saveMessage(string_token[1], content);
+			if (server_reply[0]=='1'){
+				if(strlen(server_reply) > 1){
+					string pesan = string(server_reply);
+					pesan.erase(pesan.begin());
+					puts("----- New Message(s) -----");
+					content += pesan;
+					saveMessage(string_token[1], content);
+					puts(pesan.c_str());
+				}
+				if(recvStringFrom(sock, server_reply) < 0) {
+					puts("recv failed");
+					break;
+				}
 			}
 		}
         
@@ -123,22 +132,21 @@ int main(int argc, char** argv){
 				} else{
 					//Balasan dari server
 					string pesan = string(server_reply);
-					puts("ok");
-					puts(server_reply);
-					puts("ok");
 					if(pesan[0]=='0'){
 						pesan.erase(pesan.begin());
 						string content = loadMessage(string_token[1]);
 						content.append(pesan);
 						saveMessage(string_token[1],content);
-						puts(" -------------- Ini berarti pesan yang hrs langsung disimpan ke dalam client");
+					}
+					if(recvStringFrom(sock, server_reply) < 0) {
+						puts("recv failed");
+						break;
 					}
 				}
 			}
-        } else{
-			//Balasan dari server
-			puts(server_reply);
-		}
+        }
+		//Balasan dari server
+		puts(server_reply);
         
     }
 	
@@ -196,6 +204,7 @@ int recvStringFrom(int socketId, char* server_reply){
 	
 	//Masukkan sebuah string message dari server atau string setengah jadi
 	server_reply = strcpy(server_reply,msg.c_str());
+	server_reply[msg.length()] = '\0';
 	
 	if(code<=0) //kode error atau client tutup
 		return code;

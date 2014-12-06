@@ -123,9 +123,11 @@ bool findSenderReceiverConversationInUnread(string sender, string receiver) {
 		return false;
 	} else {
 		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(sender);
-		//printUnread();
-		return (map_it != unread[idx].sender.end()); //kalau ketemu, return true
-	}
+		if (map_it == unread[idx].sender.end()) //kalau ketemu, return true
+			return false;
+		else
+			return ( (map_it->second).size() > 0);
+	}	
 }
 
 void inputMessage(string from, string to, string message, bool himself, string header_jam, string another_because_of_group = "") {
@@ -174,6 +176,7 @@ void inputMessage(string from, string to, string message, bool himself, string h
 void loadUnreadMessageFromDatabase() {
 	ifstream inputfile("databases/unread.txt");
 	int num_of_receiver;
+	unread.clear();
 	inputfile >> num_of_receiver;
 	for (int i = 1; i <= num_of_receiver; ++i) {
 		message_format temp;
@@ -521,6 +524,7 @@ int recvStringFrom(int socketId, char* server_reply){
 	
 	//Masukkan sebuah string message dari server atau string setengah jadi
 	server_reply = strcpy(server_reply,msg.c_str());
+	server_reply[msg.length()] = '\0';
 	
 	if(code<=0) //kode error atau client tutup
 		return code;
@@ -665,7 +669,6 @@ void *connection_handler(void *connectionSocket){
 					for(ite =  logged_in_users.begin(); ite!=logged_in_users.end(); ++ite) {
 						cout << ite->first << " " << ite->second << endl;
 					}
-					feedback = (char*) (string(feedback) + getNotifications(input[1])).c_str();
 				} else {
 					feedback = (char*) "Invalid username or password\n" ;
 				}
@@ -683,10 +686,10 @@ void *connection_handler(void *connectionSocket){
 					string group_name = input[1];
 					if(create_group(group_name, ite -> second)) {
 						log(getDateTime() + " " + ite->second + " created group " + group_name);
-						feedback = (char*) ("Group " + group_name + " created").c_str();
+						feedback = (char*) ("Group " + group_name + " created\n").c_str();
 					}	
 					else
-						feedback = (char*) ("Cannot create " + group_name).c_str();
+						feedback = (char*) ("Cannot create " + group_name +"\n").c_str();
 				}
 			}
 
@@ -702,10 +705,10 @@ void *connection_handler(void *connectionSocket){
 				else {
 					if(join_group(input[1], ite -> second)) {
 						log(getDateTime() + " " + ite->second + " joined group " + input[1]);
-						feedback = (char*) ("Joining group " + input[1]).c_str();
+						feedback = (char*) ("Joining group " + input[1] +"\n").c_str();
 					}
 					else
-						feedback = (char*) ("Can't join this group");
+						feedback = (char*) ("Can't join this group\n");
 				}
 			}
 
@@ -721,10 +724,10 @@ void *connection_handler(void *connectionSocket){
 				else {
 					if(leave_group(input[1], ite -> second)){
 						log(getDateTime() + " " + ite->second + " left group " + input[1]);
-						feedback = (char*) ("Leaving group " + input[1]).c_str();
+						feedback = (char*) ("Leaving group " + input[1] +"\n").c_str();
 					}
 					else
-						feedback = (char*)("Failed to leave group " + input[1]).c_str();
+						feedback = (char*)("Failed to leave group " + input[1] +"\n").c_str();
 				}
 			}
 		} else if (input[0] == "message") {
@@ -748,16 +751,20 @@ void *connection_handler(void *connectionSocket){
 							write(clientSocket, feedback, strlen(feedback)+1);
 							memset(client_message,0,sizeof(client_message));
 							read_size = recvStringFrom(clientSocket, client_message);
-							feedback = NULL;
+							feedback = (char *) "";
 							string header_jam = getDateTime();
 							inputMessage(sender,receiver,client_message,false, header_jam);
 							if(findSenderReceiverConversationInUnread(receiver, sender)) { //dibalik apakah kita menerima pesan dari orang tersebut
 								inputMessage(receiver,sender,client_message,true, header_jam); //masukkan ke diri sendiri
-								feedback = NULL;
+								feedback = (char *) "1";
 							} else { //surun simpan di client
 								string pesan = "0" + getDateTime() +" "+ ite -> second + " : " + string(client_message) + "\n";
-								feedback = (char * ) pesan.c_str();
+								char temp[1500];
+								strcpy(temp, pesan.c_str());
+								feedback = temp;
 							}
+							write(clientSocket, feedback, strlen(feedback)+1);
+							feedback = (char*) "";
 							log(getDateTime() + " " + ite->second + " messaged " + input[1]);
 							printUnread();
 						}
@@ -771,24 +778,23 @@ void *connection_handler(void *connectionSocket){
 						feedback = NULL;
 						string header_jam = getDateTime();
 						inputMessageGroup(sender,receiver,client_message,false,header_jam);
-						if(findSenderReceiverConversationInUnread(receiver, sender)) { //dibalik apakah kita menerima pesan dari orang tersebut
+						if(findSenderReceiverConversationInUnread(receiver, sender)) {
 							inputMessage(receiver,sender,client_message,true,header_jam); //masukkan ke diri sendiri
 							feedback = (char*) "1";
 						} else { //surun simpan di client
 							string pesan = "0" + getDateTime() +" "+ ite -> second + " : " + string(client_message) + "\n";
-							feedback = (char * ) pesan.c_str();
+							char temp[1500];
+							strcpy(temp, pesan.c_str());
+							feedback = temp;
 						}
+						write(clientSocket, feedback, strlen(feedback)+1);
+						feedback = (char*) "";
 						log(getDateTime() + " " + ite->second + " messaged " + input[1]);
 					} else {
-						feedback = (char*) (input[1] + " doesn't exist").c_str();
+						feedback = (char*) (input[1] + " doesn't exist\n").c_str();
 					}
 				}
-				string fb = string(feedback);
-				string notif =  getNotifications(ite -> second);
-				string res = fb + notif;
-				feedback = NULL;
-				feedback = (char*) res.c_str();
-				printUnread();
+				
 			}
 		} else if (input[0] == "show") {
 			map<int,string>::iterator ite;
@@ -809,25 +815,36 @@ void *connection_handler(void *connectionSocket){
 							string receiver = ite -> second;
 							printUnread();
 							vector<string> msg =  readMessage(sender,receiver); //from, to
-							string pesan = "";
+							string pesan = "1";
 							for(int p = 0; p < msg.size(); ++p) { //vector ke string
  								pesan += (msg[p] + "\n");
 							}
-							feedback = (char*) pesan.c_str();
+							char temp[1500];
+							strcpy(temp,pesan.c_str());
 							printUnread();
+							feedback = temp;
+							write(clientSocket, feedback, strlen(feedback)+1);
+							feedback = (char*) "";
 						}
 					} else {
-						feedback = (char*) (input[1] + " doesn't exist").c_str();
+						feedback = (char*) ("Account "+ input[1] + " doesn't exist\n").c_str();
 					}
 				}
-				string fb = string(feedback);
-				string notif =  getNotifications(ite -> second);
-				string res = fb + notif;
-				feedback = NULL;
-				feedback = (char*) res.c_str();
 			}
 		} else {
 			feedback = (char* ) "command not exists";
+		}
+		
+		//Membuat notifikasi
+		map<int,string>::iterator ite;
+		ite = logged_in_users.find(clientSocket);
+		if (ite != logged_in_users.end()) { //berarti belum log in
+			string fb = string(feedback);
+			string notif =  getNotifications(ite -> second);
+			string res = fb+notif;
+			char temp[1900];
+			strcpy(temp, res.c_str());
+			feedback = temp;
 		}
         write(clientSocket, feedback, strlen(feedback)+1);
         free(message);
@@ -840,7 +857,7 @@ void *connection_handler(void *connectionSocket){
 			log(getDateTime() + " " + ite->second + " logged out");
 			logged_in_users.erase(ite);
 		}
-		cout << "User yang sedang login dan socket\n";
+		cout << "\nUser yang sedang login dan socket\n";
 		for(ite =  logged_in_users.begin(); ite!=logged_in_users.end(); ++ite) {
 			cout << ite->first << " " << ite->second << endl;
 		}

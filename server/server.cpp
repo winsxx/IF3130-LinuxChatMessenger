@@ -33,6 +33,7 @@ using namespace std;
  */
 pthread_mutex_t mutex_user_data;
 pthread_mutex_t mutex_group_data;
+pthread_mutex_t mutex_unread;
 
 typedef struct {
 	string receiver;
@@ -44,6 +45,9 @@ vector<message_format> unread;
 bool is_username_exists(string username);
 
 string getNotifications(string username) {
+	//Lock
+	pthread_mutex_lock (&mutex_unread);
+			
 	string retval = "";
 	vector<string> messageList;
 
@@ -58,6 +62,9 @@ string getNotifications(string username) {
 			break;
 		}
 	}
+	//UnLock
+	pthread_mutex_unlock (&mutex_unread);
+			
 	return retval;
 }
 
@@ -84,6 +91,9 @@ void printUnread() {
 }
 
 vector<string> readMessage(string from, string to) {
+	//Lock
+	pthread_mutex_lock (&mutex_unread);
+	
 	vector<string> retval;
 	int idx = -1;
 	for(int i = 0; i < unread.size(); ++i) {
@@ -93,10 +103,16 @@ vector<string> readMessage(string from, string to) {
 		}
 	}
 
-	if (idx == -1) return retval; //berarti ga ada pesan yang masuk ke dia
+	if (idx == -1){
+		//UnLock
+		pthread_mutex_unlock (&mutex_unread);
+		return retval; //berarti ga ada pesan yang masuk ke dia
+	}
 	else {
 		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(from);
 		if (map_it == unread[idx].sender.end()) { //berarti ga ada pesan yang dari sender ke dia
+			//UnLock
+			pthread_mutex_unlock (&mutex_unread);
 			return retval;
 		} else {
 			retval = map_it -> second;
@@ -106,12 +122,18 @@ vector<string> readMessage(string from, string to) {
 				unread.erase(unread.begin()+idx);
 			}
 			saveUnreadMessageToDatabase();
+			//UnLock
+			pthread_mutex_unlock (&mutex_unread);
 			return retval;
 		}
 	}
+	
 }
 
 bool findSenderReceiverConversationInUnread(string sender, string receiver) {
+	//Lock
+	pthread_mutex_lock (&mutex_unread);
+	
 	int idx = -1;
 	for(int i = 0; i < unread.size(); ++i) {
 		if (unread[i].receiver == receiver) {
@@ -120,17 +142,29 @@ bool findSenderReceiverConversationInUnread(string sender, string receiver) {
 		}
 	}
 	if (idx == -1) {
+		//UnLock
+		pthread_mutex_unlock (&mutex_unread);
 		return false;
 	} else {
 		map<string, vector<string> >::iterator map_it = unread[idx].sender.find(sender);
-		if (map_it == unread[idx].sender.end()) //kalau ketemu, return true
+		if (map_it == unread[idx].sender.end()){ //kalau ketemu, return true
+			//UnLock
+			pthread_mutex_unlock (&mutex_unread);
+			
 			return false;
-		else
+		} else {
+			//UnLock
+			pthread_mutex_unlock (&mutex_unread);
+			
 			return ( (map_it->second).size() > 0);
+		}
 	}	
 }
 
 void inputMessage(string from, string to, string message, bool himself, string header_jam, string another_because_of_group = "") {
+	//Lock
+	pthread_mutex_lock (&mutex_unread);
+	
 	int idx = -1;
 	for(int i = 0; i < unread.size(); ++i) {
 		if (unread[i].receiver == to) {
@@ -171,6 +205,8 @@ void inputMessage(string from, string to, string message, bool himself, string h
 		unread.push_back(mf);
 	}
 	saveUnreadMessageToDatabase();
+	//UnLock
+	pthread_mutex_unlock (&mutex_unread);
 }
 
 void loadUnreadMessageFromDatabase() {
@@ -598,6 +634,7 @@ int main(int argc, char *argv[]){
 	 */
 	pthread_mutex_init(&mutex_user_data, NULL);
 	pthread_mutex_init(&mutex_group_data, NULL);
+	pthread_mutex_init(&mutex_unread, NULL);
 	
 	/* Accept connection
 	 * int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
@@ -625,6 +662,7 @@ int main(int argc, char *argv[]){
 	 */
 	pthread_mutex_destroy(&mutex_user_data); 
 	pthread_mutex_destroy(&mutex_group_data); 
+	pthread_mutex_destroy(&mutex_unread); 
 	
 	return 0;
  }
@@ -673,6 +711,19 @@ void *connection_handler(void *connectionSocket){
 					feedback = (char*) "Invalid username or password\n" ;
 				}
 			}
+		} else if(input[0] == "logout") {
+			map<int,string>::iterator ite;
+			ite = logged_in_users.find(clientSocket);
+			if (ite == logged_in_users.end()) { //berarti belum log in
+				feedback = (char*) "Anda belum login!\n";
+			} else if (input.size() != 1){
+				feedback = (char*) "Error format penulisan logout.\nFormat: logout\n";
+			} else {
+				log(getDateTime() + " " + ite->second + " logged out");
+				logged_in_users.erase(ite);
+				feedback = (char*) "Anda berhasil logout\n";
+			}
+			
 		} else if (input[0] == "create") {
 			map<int,string>::iterator ite;
 			ite = logged_in_users.find(clientSocket);

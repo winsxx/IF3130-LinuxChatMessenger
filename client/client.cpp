@@ -110,11 +110,6 @@ int main(int argc, char** argv){
 			}
 		}
         
-        //Jika logout, keluar dari loop dan close sock, recv server akan menerima return 0
-        if(string_token[0].compare("logout") == 0){
-			break;
-		}
-        
         if (strcmp(server_reply,"Message: ")==0) {
         	puts(server_reply);
         	gets(message2);
